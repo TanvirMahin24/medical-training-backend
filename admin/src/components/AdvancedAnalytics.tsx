@@ -65,6 +65,11 @@ interface AnalyticsData {
       churnRate: number;
       averageRevenuePerUser: number;
     };
+    planDistribution: Array<{
+      plan: string;
+      users: number;
+      revenue: number;
+    }>;
   };
   learning: {
     skillProgression: Array<{

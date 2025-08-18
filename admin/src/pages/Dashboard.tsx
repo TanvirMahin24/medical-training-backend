@@ -10,6 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 import { AdminStats } from "../types";
+import { adminAPI } from "../utils/api";
 
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);

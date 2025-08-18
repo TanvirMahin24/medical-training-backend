@@ -10,6 +10,7 @@ import {
   Download,
 } from "lucide-react";
 import { User } from "../types";
+import { adminAPI } from "../utils/api";
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
