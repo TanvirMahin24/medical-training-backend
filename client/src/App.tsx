@@ -20,6 +20,7 @@ import Progress from "./pages/Progress";
 import Badges from "./pages/Badges";
 import Profile from "./pages/Profile";
 import EndShift from "./pages/EndShift";
+import SubscriptionPlans from "./pages/SubscriptionPlans";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -103,6 +104,16 @@ function App() {
                 <PrivateRoute>
                   <Layout>
                     <Profile />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/plans"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <SubscriptionPlans />
                   </Layout>
                 </PrivateRoute>
               }

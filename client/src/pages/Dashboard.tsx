@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { motion } from "framer-motion";
 import api from "../utils/api";
+import SubscriptionUpgradeTrigger from "../components/SubscriptionUpgradeTrigger";
 
 interface DashboardStats {
   totalCases: number;
@@ -129,6 +130,13 @@ const Dashboard: React.FC = () => {
           Continue your medical training journey. You're making great progress!
         </p>
       </motion.div>
+
+      {/* Subscription Upgrade Trigger */}
+      <SubscriptionUpgradeTrigger
+        triggerType="premium-feature"
+        message="Upgrade to unlock advanced analytics, unlimited cases, and premium features"
+        className="mb-4"
+      />
 
       {/* Quick Actions */}
       <motion.div

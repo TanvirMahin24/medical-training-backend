@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../utils/api";
+import SubscriptionUpgradeTrigger from "../components/SubscriptionUpgradeTrigger";
 
 interface MedicalCase {
   id: string;
@@ -213,6 +214,13 @@ const CaseLibrary: React.FC = () => {
           </span>
         </div>
       </motion.div>
+
+      {/* Subscription Upgrade Trigger */}
+      <SubscriptionUpgradeTrigger
+        triggerType="premium-feature"
+        message="Upgrade to access unlimited cases and advanced features"
+        className="mb-6"
+      />
 
       {/* Filters and Search */}
       <motion.div

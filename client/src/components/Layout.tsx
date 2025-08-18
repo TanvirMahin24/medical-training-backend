@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { motion } from "framer-motion";
+import UpgradeButton from "./UpgradeButton";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,6 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Case Library", href: "/cases", icon: "📚" },
     { name: "Progress", href: "/progress", icon: "📊" },
     { name: "Badges", href: "/badges", icon: "🏆" },
+    { name: "Plans", href: "/plans", icon: "👑" },
     { name: "Profile", href: "/profile", icon: "👤" },
   ];
 
@@ -110,6 +111,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
+              {/* Upgrade Button */}
+              <UpgradeButton variant="primary" size="sm" />
+
               {/* User menu */}
               <div className="relative">
                 <div className="flex items-center space-x-3">
