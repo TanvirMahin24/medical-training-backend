@@ -71,9 +71,25 @@ export const adminAPI = {
     api.get("/admin/subscriptions", { params }),
   getSubscription: (id: string) => api.get(`/admin/subscriptions/${id}`),
   createSubscription: (data: any) => api.post("/admin/subscriptions", data),
-  updateSubscription: (id: string, data: any) => api.put(`/admin/subscriptions/${id}`, data),
+  updateSubscription: (id: string, data: any) =>
+    api.put(`/admin/subscriptions/${id}`, data),
   deleteSubscription: (id: string) => api.delete(`/admin/subscriptions/${id}`),
-  reactivateSubscription: (id: string) => api.post(`/admin/subscriptions/${id}/reactivate`),
+  reactivateSubscription: (id: string) =>
+    api.post(`/admin/subscriptions/${id}/reactivate`),
+
+  // Subscription Plans
+  getSubscriptionPlans: () => api.get("/admin/subscription-plans"),
+  getExistingPlanNames: () => api.get("/admin/subscription-plans/names"),
+  getSubscriptionPlan: (id: string) =>
+    api.get(`/admin/subscription-plans/${id}`),
+  createSubscriptionPlan: (data: any) =>
+    api.post("/admin/subscription-plans", data),
+  updateSubscriptionPlan: (id: string, data: any) =>
+    api.put(`/admin/subscription-plans/${id}`, data),
+  deleteSubscriptionPlan: (id: string) =>
+    api.delete(`/admin/subscription-plans/${id}`),
+  toggleSubscriptionPlanStatus: (id: string) =>
+    api.post(`/admin/subscription-plans/${id}/toggle-status`),
 
   // Payments
   getPayments: (params?: any) => api.get("/admin/payments", { params }),

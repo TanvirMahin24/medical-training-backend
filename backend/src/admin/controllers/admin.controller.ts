@@ -48,8 +48,6 @@ export class AdminController {
     return this.adminService.adminLogin(loginDto);
   }
 
-
-
   @Get('users')
   @UseGuards(AdminGuard)
   @ApiBearerAuth()
@@ -191,7 +189,9 @@ export class AdminController {
   @Get('subscriptions')
   @UseGuards(AdminGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all subscriptions with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all subscriptions with pagination and filters',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, type: String })
@@ -274,10 +274,7 @@ export class AdminController {
     status: 401,
     description: 'Unauthorized',
   })
-  async updateSubscription(
-    @Param('id') id: string,
-    @Body() updateDto: any,
-  ) {
+  async updateSubscription(@Param('id') id: string, @Body() updateDto: any) {
     return this.adminService.updateSubscription(id, updateDto);
   }
 
@@ -319,84 +316,5 @@ export class AdminController {
   })
   async reactivateSubscription(@Param('id') id: string) {
     return this.adminService.reactivateSubscription(id);
-  }
-
-  @Get('subscription-plans')
-  @UseGuards(AdminGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get available subscription plans' })
-  @ApiResponse({
-    status: 200,
-    description: 'Subscription plans retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async getSubscriptionPlans() {
-    return this.adminService.getSubscriptionPlans();
-  }
-
-  @Post('subscription-plans')
-  @UseGuards(AdminGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create new subscription plan' })
-  @ApiResponse({
-    status: 201,
-    description: 'Subscription plan created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid plan data',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async createSubscriptionPlan(@Body() createDto: any) {
-    return this.adminService.createSubscriptionPlan(createDto);
-  }
-
-  @Put('subscription-plans/:id')
-  @UseGuards(AdminGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update subscription plan' })
-  @ApiResponse({
-    status: 200,
-    description: 'Subscription plan updated successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Plan not found',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async updateSubscriptionPlan(
-    @Param('id') id: string,
-    @Body() updateDto: any,
-  ) {
-    return this.adminService.updateSubscriptionPlan(id, updateDto);
-  }
-
-  @Delete('subscription-plans/:id')
-  @UseGuards(AdminGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete subscription plan' })
-  @ApiResponse({
-    status: 200,
-    description: 'Subscription plan deleted successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Plan not found',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-  })
-  async deleteSubscriptionPlan(@Param('id') id: string) {
-    return this.adminService.deleteSubscriptionPlan(id);
   }
 }

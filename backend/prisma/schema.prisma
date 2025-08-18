@@ -76,9 +76,43 @@ model UserProfile {
 }
 
 // Subscription & Payment Management
+model SubscriptionPlan {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  tagline           String
+  price             Float
+  currency          String   @default("USD")
+  duration          Int      // in days
+  keyFeatures       String[]
+  casesPerMonth     Int
+  simulationsPerMonth Int
+  practiceTests     Int
+  certificates      Int
+  prioritySupport   Boolean  @default(false)
+  offlineAccess     Boolean  @default(false)
+  customCases       Boolean  @default(false)
+  popular           Boolean  @default(false)
+  recommended       Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  subscriptions     Subscription[]
+
+  @@map("subscription_plans")
+  @@index([name])
+  @@index([price])
+  @@index([isActive])
+  @@index([popular])
+  @@index([recommended])
+  @@index([createdAt])
+}
+
 model Subscription {
   id                    String            @id @default(uuid())
   userId                String
+  subscriptionPlanId    String
   stripeSubscriptionId  String            @unique
   planType              String            // basic, premium, enterprise
   status                SubscriptionStatus
@@ -95,9 +129,11 @@ model Subscription {
 
   // Relations
   user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionPlan      SubscriptionPlan  @relation(fields: [subscriptionPlanId], references: [id])
 
   @@map("subscriptions")
   @@index([userId])
+  @@index([subscriptionPlanId])
   @@index([status])
   @@index([planType])
   @@index([currentPeriodEnd])

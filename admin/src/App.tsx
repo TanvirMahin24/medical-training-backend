@@ -15,6 +15,7 @@ import Users from "./pages/Users";
 import Cases from "./pages/Cases";
 import Badges from "./pages/Badges";
 import Subscriptions from "./pages/Subscriptions";
+import SubscriptionPlansManagement from "./pages/SubscriptionPlansManagement";
 import Payments from "./pages/Payments";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
@@ -75,6 +76,16 @@ function App() {
                 <PrivateRoute>
                   <Layout>
                     <Subscriptions />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/subscription-plans"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <SubscriptionPlansManagement />
                   </Layout>
                 </PrivateRoute>
               }

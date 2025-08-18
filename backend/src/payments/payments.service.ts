@@ -104,12 +104,23 @@ export class PaymentsService {
       const subscription =
         await this.stripe.subscriptions.create(subscriptionData);
 
+      // Get the subscription plan based on plan type
+      const planType = this.getPlanTypeFromPriceId(priceId);
+      const subscriptionPlan = await this.prisma.subscriptionPlan.findFirst({
+        where: { name: planType, isActive: true },
+      });
+
+      if (!subscriptionPlan) {
+        throw new BadRequestException('Subscription plan not found');
+      }
+
       // Save subscription to database
       const dbSubscription = await this.prisma.subscription.create({
         data: {
           userId,
+          subscriptionPlanId: subscriptionPlan.id,
           stripeSubscriptionId: subscription.id,
-          planType: this.getPlanTypeFromPriceId(priceId),
+          planType: planType,
           status: this.mapStripeStatus(subscription.status),
           currentPeriodStart: new Date(
             subscription.current_period_start * 1000,
@@ -376,7 +387,9 @@ export class PaymentsService {
     return 'basic';
   }
 
-  private mapStripeStatus(stripeStatus: string): 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' {
+  private mapStripeStatus(
+    stripeStatus: string,
+  ): 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' {
     switch (stripeStatus) {
       case 'active':
         return 'ACTIVE';

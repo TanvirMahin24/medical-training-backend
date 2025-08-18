@@ -140,7 +140,7 @@ const SubscriptionUpgradeModal: React.FC<SubscriptionUpgradeModalProps> = ({
                         {plan.name}
                       </h3>
                     </div>
-                    <p className="text-gray-600 text-sm">{plan.description}</p>
+                    <p className="text-gray-600 text-sm">{plan.tagline}</p>
                   </div>
 
                   {/* Price */}
@@ -153,11 +153,11 @@ const SubscriptionUpgradeModal: React.FC<SubscriptionUpgradeModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Features */}
+                  {/* Key Features */}
                   <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
-                    {plan.features.map((feature, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    {plan.keyFeatures.map((feature, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
                         <span className="text-sm text-gray-700">{feature}</span>
                       </div>
                     ))}

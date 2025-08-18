@@ -74,9 +74,8 @@ const SubscriptionPlans: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Select the perfect plan to accelerate your medical training journey.
-            Start with our free trial and upgrade as you grow.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Select the perfect plan to accelerate your medical training journey
           </p>
 
           {/* Current Plan Display */}
@@ -92,14 +91,14 @@ const SubscriptionPlans: React.FC = () => {
         </motion.div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {SUBSCRIPTION_PLANS.map((plan, index) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative bg-white rounded-2xl shadow-xl overflow-visible h-full min-h-[520px] flex flex-col ${
+              className={`relative bg-white rounded-2xl shadow-xl overflow-visible h-full min-h-[480px] flex flex-col ${
                 isCurrentPlan(plan)
                   ? "ring-4 ring-blue-500 ring-opacity-50"
                   : "hover:shadow-2xl transition-shadow duration-300"
@@ -108,7 +107,7 @@ const SubscriptionPlans: React.FC = () => {
               {/* Plan Badge */}
               {getPlanBadge(plan) && (
                 <div
-                  className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full text-sm font-medium ${getPlanBadgeColor(plan)}`}
+                  className={`absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full text-xs font-medium ${getPlanBadgeColor(plan)}`}
                 >
                   {getPlanBadge(plan)}
                 </div>
@@ -116,20 +115,20 @@ const SubscriptionPlans: React.FC = () => {
 
               {/* Plan Header */}
               <div className="p-6 md:p-8 text-center">
-                <div className="flex items-center justify-center space-x-2 mb-4">
+                <div className="flex items-center justify-center space-x-2 mb-3">
                   {getPlanIcon(plan)}
                   <h3 className="text-2xl font-bold text-gray-900">
                     {plan.name}
                   </h3>
                 </div>
-                <p className="text-gray-600 mb-6">{plan.description}</p>
+                <p className="text-gray-600 mb-6 text-sm">{plan.tagline}</p>
 
                 {/* Price */}
                 <div className="mb-6">
                   <div className="text-4xl md:text-5xl font-bold text-gray-900">
                     {formatPrice(plan.price)}
                   </div>
-                  <div className="text-gray-500">
+                  <div className="text-gray-500 text-sm">
                     per {formatDuration(plan.duration)}
                   </div>
                 </div>
@@ -145,15 +144,15 @@ const SubscriptionPlans: React.FC = () => {
                 )}
               </div>
 
-              {/* Features */}
+              {/* Key Features */}
               <div className="px-6 md:px-8 pb-6 md:pb-8 flex-1">
-                <div className="space-y-4 mb-8">
-                  {plan.features.map((feature, featureIndex) => (
+                <div className="space-y-3 mb-8">
+                  {plan.keyFeatures.map((feature, featureIndex) => (
                     <div
                       key={featureIndex}
-                      className="flex items-start space-x-3"
+                      className="flex items-center space-x-3"
                     >
-                      <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
                       <span className="text-sm text-gray-700">{feature}</span>
                     </div>
                   ))}
@@ -175,7 +174,7 @@ const SubscriptionPlans: React.FC = () => {
                     }}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
                   >
-                    <span>Upgrade to {plan.name}</span>
+                    <span>Upgrade</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (

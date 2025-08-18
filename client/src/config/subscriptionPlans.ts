@@ -1,11 +1,11 @@
 export interface SubscriptionPlan {
   id: string;
   name: string;
-  description: string;
+  tagline: string;
   price: number;
   currency: string;
   duration: number; // in days
-  features: string[];
+  keyFeatures: string[]; // Only 3-4 key features
   limits: {
     casesPerMonth: number;
     simulationsPerMonth: number;
@@ -23,16 +23,11 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: "trial",
     name: "Free Trial",
-    description: "Get started with basic features to explore the platform",
+    tagline: "Get started with basic features",
     price: 0,
     currency: "USD",
     duration: 7,
-    features: [
-      "Access to 3 basic medical cases",
-      "2 simulation sessions per month",
-      "Basic progress tracking",
-      "Community support",
-    ],
+    keyFeatures: ["3 basic cases", "2 simulations/month", "Basic tracking"],
     limits: {
       casesPerMonth: 3,
       simulationsPerMonth: 2,
@@ -45,18 +40,16 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     id: "basic",
-    name: "Basic Plan",
-    description: "Perfect for medical students and early-career professionals",
+    name: "Basic",
+    tagline: "Perfect for students",
     price: 19.99,
     currency: "USD",
     duration: 30,
-    features: [
-      "Access to 15 medical cases",
-      "10 simulation sessions per month",
-      "Progress tracking and analytics",
-      "Basic practice tests",
+    keyFeatures: [
+      "15 cases/month",
+      "10 simulations/month",
+      "Progress analytics",
       "Email support",
-      "Mobile app access",
     ],
     limits: {
       casesPerMonth: 15,
@@ -70,21 +63,16 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     id: "premium",
-    name: "Premium Plan",
-    description: "Advanced features for serious medical professionals",
+    name: "Premium",
+    tagline: "Advanced features for professionals",
     price: 39.99,
     currency: "USD",
     duration: 30,
-    features: [
-      "Access to 50+ medical cases",
-      "Unlimited simulation sessions",
-      "Advanced analytics and reporting",
-      "Comprehensive practice tests",
-      "Priority email support",
-      "Offline case downloads",
-      "Custom case creation",
-      "Certificate generation",
-      "Progress sharing with mentors",
+    keyFeatures: [
+      "50+ cases/month",
+      "Unlimited simulations",
+      "Advanced analytics",
+      "Priority support",
     ],
     limits: {
       casesPerMonth: 50,
@@ -100,22 +88,16 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     id: "enterprise",
-    name: "Enterprise Plan",
-    description: "Complete solution for medical institutions and teams",
+    name: "Enterprise",
+    tagline: "Complete solution for teams",
     price: 99.99,
     currency: "USD",
     duration: 30,
-    features: [
-      "Access to all medical cases (100+)",
+    keyFeatures: [
       "Unlimited everything",
-      "Team management and analytics",
-      "Custom branding options",
-      "API access for integration",
-      "Dedicated account manager",
-      "Phone and video support",
-      "Custom training programs",
-      "Bulk user management",
-      "Advanced reporting and insights",
+      "Team management",
+      "Custom branding",
+      "Dedicated support",
     ],
     limits: {
       casesPerMonth: -1, // unlimited

@@ -30,6 +30,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Cases", href: "/cases", icon: FileText },
     { name: "Badges", href: "/badges", icon: Award },
     { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
+    {
+      name: "Subscription Plans",
+      href: "/subscription-plans",
+      icon: CreditCard,
+    },
     { name: "Payments", href: "/payments", icon: CreditCard },
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Settings", href: "/settings", icon: Settings },

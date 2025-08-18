@@ -6,6 +6,7 @@ import { AdminService } from './services/admin.service';
 import { AdminGuard } from './guards/admin.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { SubscriptionPlanModule } from './subscription-plan.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
       inject: [ConfigService],
     }),
     AuthModule,
+    SubscriptionPlanModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],
