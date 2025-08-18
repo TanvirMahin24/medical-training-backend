@@ -1,0 +1,61 @@
+{
+  "name": "medical-training-backend",
+  "version": "1.0.0",
+  "description": "Comprehensive medical training platform with NestJS backend, React client, and admin panel",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "client",
+    "admin"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:client\" \"npm run dev:admin\"",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:client": "cd client && npm start",
+    "dev:admin": "cd admin && npm run dev",
+    "build": "npm run build:backend && npm run build:client && npm run build:admin",
+    "build:backend": "cd backend && npm run build",
+    "build:client": "cd client && npm run build",
+    "build:admin": "cd admin && npm run build",
+    "test": "npm run test:backend && npm run test:client && npm run test:admin",
+    "test:backend": "cd backend && npm run test",
+    "test:client": "cd client && npm run test",
+    "test:admin": "cd admin && npm run test",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --remove-orphans",
+    "install:all": "npm install && cd backend && npm install && cd ../client && npm install && cd ../admin && npm install",
+    "db:migrate": "cd backend && npm run prisma:migrate",
+    "db:seed": "cd backend && npm run prisma:seed",
+    "db:studio": "cd backend && npm run prisma:studio",
+    "lint": "npm run lint:backend && npm run lint:client && npm run lint:admin",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:client": "cd client && npm run lint",
+    "lint:admin": "cd admin && npm run lint",
+    "format": "npm run format:backend && npm run format:client && npm run format:admin",
+    "format:backend": "cd backend && npm run format",
+    "format:client": "cd client && npm run format",
+    "format:admin": "cd admin && npm run format"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "medical",
+    "training",
+    "simulation",
+    "nestjs",
+    "react",
+    "postgresql",
+    "prisma",
+    "docker"
+  ],
+  "author": "Medical Training Team",
+  "license": "MIT"
+}

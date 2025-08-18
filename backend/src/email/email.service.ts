@@ -1,0 +1,232 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
+import * as path from 'path';
+import * as fs from 'fs';
+
+@Injectable()
+export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
+  private transporter: nodemailer.Transporter;
+
+  constructor(private configService: ConfigService) {
+    this.initializeTransporter();
+  }
+
+  private async initializeTransporter() {
+    const isDevelopment = this.configService.get('NODE_ENV') === 'development';
+
+    if (isDevelopment) {
+      // Use Mailhog for development
+      this.transporter = nodemailer.createTransporter({
+        host: this.configService.get('SMTP_HOST', 'localhost'),
+        port: this.configService.get('SMTP_PORT', 1025),
+        secure: false,
+        auth: {
+          user: this.configService.get('SMTP_USER'),
+          pass: this.configService.get('SMTP_PASS'),
+        },
+      });
+    } else {
+      // Use production SMTP
+      this.transporter = nodemailer.createTransporter({
+        host: this.configService.get('SMTP_HOST'),
+        port: this.configService.get('SMTP_PORT'),
+        secure: this.configService.get('SMTP_SECURE', false),
+        auth: {
+          user: this.configService.get('SMTP_USER'),
+          pass: this.configService.get('SMTP_PASS'),
+        },
+      });
+    }
+
+    // Verify connection
+    try {
+      await this.transporter.verify();
+      this.logger.log('Email service initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize email service:', error);
+    }
+  }
+
+  async sendVerificationEmail(email: string, firstName: string, token: string) {
+    const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email/${token}`;
+
+    const htmlContent = this.getEmailTemplate('verification', {
+      firstName,
+      verificationUrl,
+      supportEmail: this.configService.get('SMTP_FROM'),
+    });
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get('SMTP_FROM'),
+        to: email,
+        subject: 'Verify Your Email - Medical Training Platform',
+        html: htmlContent,
+      });
+
+      this.logger.log(`Verification email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send verification email to ${email}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async sendPasswordResetEmail(
+    email: string,
+    firstName: string,
+    token: string,
+  ) {
+    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
+
+    const htmlContent = this.getEmailTemplate('password-reset', {
+      firstName,
+      resetUrl,
+      supportEmail: this.configService.get('SMTP_FROM'),
+    });
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get('SMTP_FROM'),
+        to: email,
+        subject: 'Password Reset Request - Medical Training Platform',
+        html: htmlContent,
+      });
+
+      this.logger.log(`Password reset email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email to ${email}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async sendSubscriptionConfirmation(
+    email: string,
+    firstName: string,
+    planType: string,
+  ) {
+    const htmlContent = this.getEmailTemplate('subscription-confirmation', {
+      firstName,
+      planType,
+      supportEmail: this.configService.get('SMTP_FROM'),
+    });
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get('SMTP_FROM'),
+        to: email,
+        subject: 'Subscription Confirmed - Medical Training Platform',
+        html: htmlContent,
+      });
+
+      this.logger.log(`Subscription confirmation email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send subscription confirmation email to ${email}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  async sendTrialExpirationReminder(
+    email: string,
+    firstName: string,
+    daysLeft: number,
+  ) {
+    const htmlContent = this.getEmailTemplate('trial-expiration', {
+      firstName,
+      daysLeft,
+      supportEmail: this.configService.get('SMTP_FROM'),
+    });
+
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get('SMTP_FROM'),
+        to: email,
+        subject: `Trial Expires in ${daysLeft} Days - Medical Training Platform`,
+        html: htmlContent,
+      });
+
+      this.logger.log(`Trial expiration reminder sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send trial expiration reminder to ${email}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  private getEmailTemplate(templateName: string, data: any): string {
+    const templatePath = path.join(
+      __dirname,
+      'templates',
+      `${templateName}.html`,
+    );
+
+    try {
+      let template = fs.readFileSync(templatePath, 'utf8');
+
+      // Replace placeholders with actual data
+      Object.keys(data).forEach((key) => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        template = template.replace(regex, data[key]);
+      });
+
+      return template;
+    } catch (error) {
+      this.logger.warn(`Template ${templateName} not found, using fallback`);
+      return this.getFallbackTemplate(templateName, data);
+    }
+  }
+
+  private getFallbackTemplate(templateName: string, data: any): string {
+    switch (templateName) {
+      case 'verification':
+        return `
+          <h2>Welcome to Medical Training Platform!</h2>
+          <p>Hi {{firstName}},</p>
+          <p>Please verify your email address by clicking the link below:</p>
+          <p><a href="{{verificationUrl}}">Verify Email</a></p>
+          <p>If you have any questions, please contact us at {{supportEmail}}</p>
+        `;
+
+      case 'password-reset':
+        return `
+          <h2>Password Reset Request</h2>
+          <p>Hi {{firstName}},</p>
+          <p>You requested a password reset. Click the link below to reset your password:</p>
+          <p><a href="{{resetUrl}}">Reset Password</a></p>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        `;
+
+      case 'subscription-confirmation':
+        return `
+          <h2>Subscription Confirmed</h2>
+          <p>Hi {{firstName}},</p>
+          <p>Your {{planType}} subscription has been confirmed!</p>
+          <p>Thank you for choosing Medical Training Platform.</p>
+        `;
+
+      case 'trial-expiration':
+        return `
+          <h2>Trial Expiration Reminder</h2>
+          <p>Hi {{firstName}},</p>
+          <p>Your trial will expire in {{daysLeft}} days.</p>
+          <p>Upgrade now to continue accessing all features!</p>
+        `;
+
+      default:
+        return '<p>Email content</p>';
+    }
+  }
+}

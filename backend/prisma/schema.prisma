@@ -1,0 +1,254 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  role              UserRole @default(USER)
+  isEmailVerified   Boolean  @default(false)
+  emailVerificationToken String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialExpiresAt    DateTime?
+  stripeCustomerId  String?  @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  profile           UserProfile?
+  subscriptions     Subscription[]
+  payments          Payment[]
+  paymentMethods    PaymentMethod[]
+  userProgress      UserProgress[]
+  userBadges        UserBadge[]
+  sessions          Session[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  avatar            String?
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String?
+  medicalLicense    String?
+  specialization    String?
+  experienceYears   Int?
+  bio               String?
+  preferences       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// Subscription & Payment Management
+model Subscription {
+  id                    String            @id @default(uuid())
+  userId                String
+  stripeSubscriptionId  String            @unique
+  planType              String            // basic, premium, enterprise
+  status                SubscriptionStatus
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean           @default(false)
+  canceledAt            DateTime?
+  endedAt               DateTime?
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  metadata              Json?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Relations
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  userId                String
+  stripePaymentIntentId String        @unique
+  amount                Int            // Amount in cents
+  currency              String         @default("usd")
+  status                PaymentStatus
+  description           String?
+  metadata              Json?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  // Relations
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model PaymentMethod {
+  id                    String   @id @default(uuid())
+  userId                String
+  stripePaymentMethodId String   @unique
+  type                  String   // card, bank_account
+  last4                 String?
+  brand                 String?
+  expMonth              Int?
+  expYear               Int?
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+// Medical Cases & Training
+model MedicalCase {
+  id                String        @id @default(uuid())
+  title             String
+  description       String
+  difficulty        CaseDifficulty
+  category          String        // cardiology, emergency, pediatrics, etc.
+  tags              String[]
+  estimatedDuration Int           // in minutes
+  content           Json          // Case scenario, tasks, decisions
+  isActive          Boolean       @default(true)
+  isPublished       Boolean       @default(false)
+  publishedAt       DateTime?
+  createdBy         String?       // Admin user ID
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  userProgress      UserProgress[]
+
+  @@map("medical_cases")
+}
+
+model UserProgress {
+  id                String   @id @default(uuid())
+  userId            String
+  caseId            String
+  score              Int      @default(0)
+  maxScore          Int
+  completedAt       DateTime?
+  attempts          Int       @default(0)
+  timeSpent         Int?      // in seconds
+  answers           Json?     // User's responses and decisions
+  feedback          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case              MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, caseId])
+  @@map("user_progress")
+}
+
+// Badge System
+model Badge {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  description       String
+  imageUrl          String?
+  criteria          Json     // Badge earning criteria
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  userBadges        UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id                String   @id @default(uuid())
+  userId            String
+  badgeId            String
+  earnedAt           DateTime @default(now())
+  metadata           Json?    // Additional earning context
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge             Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// Session Management
+model Session {
+  id                String   @id @default(uuid())
+  userId            String
+  token             String   @unique
+  expiresAt         DateTime
+  ipAddress         String?
+  userAgent         String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PAST_DUE
+  UNPAID
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum CaseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
