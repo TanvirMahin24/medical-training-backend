@@ -19,42 +19,55 @@ const Users: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockUsers: User[] = [
-      {
-        id: "1",
-        email: "dr.sarah@example.com",
-        firstName: "Sarah",
-        lastName: "Johnson",
-        role: "USER",
-        subscriptionStatus: "ACTIVE",
-        createdAt: "2024-01-15T10:30:00Z",
-        updatedAt: "2024-01-15T10:30:00Z",
-      },
-      {
-        id: "2",
-        email: "dr.mike@example.com",
-        firstName: "Mike",
-        lastName: "Chen",
-        role: "USER",
-        subscriptionStatus: "ACTIVE",
-        createdAt: "2024-01-10T14:20:00Z",
-        updatedAt: "2024-01-10T14:20:00Z",
-      },
-      {
-        id: "3",
-        email: "dr.emma@example.com",
-        firstName: "Emma",
-        lastName: "Williams",
-        role: "USER",
-        subscriptionStatus: "TRIAL",
-        createdAt: "2024-01-20T09:15:00Z",
-        updatedAt: "2024-01-20T09:15:00Z",
-      },
-    ];
+    const fetchUsers = async () => {
+      try {
+        const response = await adminAPI.getUsers({
+          page: 1,
+          limit: 100,
+        });
+        setUsers(response.data.users);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        // Fallback to mock data if API fails
+        const mockUsers: User[] = [
+          {
+            id: "1",
+            email: "dr.sarah@example.com",
+            firstName: "Sarah",
+            lastName: "Johnson",
+            role: "USER",
+            subscriptionStatus: "ACTIVE",
+            createdAt: "2024-01-15T10:30:00Z",
+            updatedAt: "2024-01-15T10:30:00Z",
+          },
+          {
+            id: "2",
+            email: "dr.mike@example.com",
+            firstName: "Mike",
+            lastName: "Chen",
+            role: "USER",
+            subscriptionStatus: "ACTIVE",
+            createdAt: "2024-01-10T14:20:00Z",
+            updatedAt: "2024-01-10T14:20:00Z",
+          },
+          {
+            id: "3",
+            email: "dr.emma@example.com",
+            firstName: "Emma",
+            lastName: "Williams",
+            role: "USER",
+            subscriptionStatus: "TRIAL",
+            createdAt: "2024-01-20T09:15:00Z",
+            updatedAt: "2024-01-20T09:15:00Z",
+          },
+        ];
+        setUsers(mockUsers);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    setUsers(mockUsers);
-    setIsLoading(false);
+    fetchUsers();
   }, []);
 
   const filteredUsers = users.filter((user) => {

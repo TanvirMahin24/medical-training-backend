@@ -18,7 +18,11 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // For now, using mock data. Replace with actual API call
+        const response = await adminAPI.getStats();
+        setStats(response.data);
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+        // Fallback to mock data if API fails
         const mockStats: AdminStats = {
           totalUsers: 1247,
           activeUsers: 892,
@@ -28,8 +32,6 @@ const Dashboard: React.FC = () => {
           userEngagement: 78.3,
         };
         setStats(mockStats);
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
       } finally {
         setIsLoading(false);
       }

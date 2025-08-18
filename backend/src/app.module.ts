@@ -18,6 +18,7 @@ import { ProgressModule } from './progress/progress.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ProgressModule,
     EmailModule,
     HealthModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

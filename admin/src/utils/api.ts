@@ -47,7 +47,7 @@ export const adminAPI = {
   // Users
   getUsers: (params?: any) => api.get("/admin/users", { params }),
   getUser: (id: string) => api.get(`/admin/users/${id}`),
-  updateUser: (id: string, data: any) => api.patch(`/admin/users/${id}`, data),
+  updateUser: (id: string, data: any) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
 
   // Cases
