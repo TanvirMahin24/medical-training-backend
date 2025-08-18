@@ -38,6 +38,11 @@ model User {
   sessions          Session[]
 
   @@map("users")
+  @@index([email])
+  @@index([role])
+  @@index([subscriptionStatus])
+  @@index([createdAt])
+  @@index([isEmailVerified])
 }
 
 model UserProfile {
@@ -64,6 +69,9 @@ model UserProfile {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+  @@index([userId])
+  @@index([specialization])
+  @@index([experienceYears])
 }
 
 // Subscription & Payment Management
@@ -88,6 +96,11 @@ model Subscription {
   user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+  @@index([userId])
+  @@index([status])
+  @@index([planType])
+  @@index([currentPeriodEnd])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -106,6 +119,11 @@ model Payment {
   user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+  @@index([userId])
+  @@index([status])
+  @@index([amount])
+  @@index([createdAt])
+  @@index([stripePaymentIntentId])
 }
 
 model PaymentMethod {
@@ -125,6 +143,10 @@ model PaymentMethod {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("payment_methods")
+  @@index([userId])
+  @@index([type])
+  @@index([isDefault])
+  @@index([stripePaymentMethodId])
 }
 
 // Medical Cases & Training
@@ -148,6 +170,13 @@ model MedicalCase {
   userProgress      UserProgress[]
 
   @@map("medical_cases")
+  @@index([difficulty])
+  @@index([category])
+  @@index([tags])
+  @@index([isActive])
+  @@index([isPublished])
+  @@index([createdAt])
+  @@index([createdBy])
 }
 
 model UserProgress {
@@ -170,6 +199,11 @@ model UserProgress {
 
   @@unique([userId, caseId])
   @@map("user_progress")
+  @@index([userId])
+  @@index([caseId])
+  @@index([score])
+  @@index([completedAt])
+  @@index([createdAt])
 }
 
 // Badge System
@@ -187,6 +221,9 @@ model Badge {
   userBadges        UserBadge[]
 
   @@map("badges")
+  @@index([name])
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 model UserBadge {
@@ -202,6 +239,9 @@ model UserBadge {
 
   @@unique([userId, badgeId])
   @@map("user_badges")
+  @@index([userId])
+  @@index([badgeId])
+  @@index([earnedAt])
 }
 
 // Session Management
@@ -220,6 +260,11 @@ model Session {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@index([createdAt])
 }
 
 // Enums

@@ -81,6 +81,24 @@ export const adminAPI = {
   // Analytics
   getStats: () => api.get("/admin/stats"),
   getAnalytics: (params?: any) => api.get("/admin/analytics", { params }),
+
+  // Advanced Analytics
+  getCaseAnalytics: () => api.get("/analytics/cases"),
+  getUserBehaviorAnalytics: () => api.get("/analytics/user-behavior"),
+  getRevenueAnalytics: () => api.get("/analytics/revenue"),
+  getLearningAnalytics: () => api.get("/analytics/learning"),
+  getComprehensiveAnalytics: () => api.get("/analytics/comprehensive"),
+  getUserRecommendations: (userId: string) =>
+    api.get(`/analytics/user/${userId}/recommendations`),
+  getPerformanceTrends: (period?: string) =>
+    api.get("/analytics/performance/trends", { params: { period } }),
+
+  // Monitoring
+  getPerformanceMetrics: () => api.get("/monitoring/metrics"),
+  getSystemHealth: () => api.get("/monitoring/health"),
+  getPerformanceHistory: (hours?: number) =>
+    api.get("/monitoring/history", { params: { hours } }),
+  getMonitoringDashboard: () => api.get("/monitoring/dashboard"),
 };
 
 export default api;

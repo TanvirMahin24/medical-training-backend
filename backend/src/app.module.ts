@@ -19,6 +19,8 @@ import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AdminModule } from './admin/admin.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { AdminModule } from './admin/admin.module';
     EmailModule,
     HealthModule,
     AdminModule,
+    MonitoringModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

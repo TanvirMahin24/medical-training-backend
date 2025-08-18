@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: medical_postgres_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-medical_project_prod}
+      POSTGRES_USER: ${DB_USER:-medical_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_production_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - medical_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-medical_user}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: medical_redis_prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - medical_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: medical_backend_prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER:-medical_user}:${DB_PASSWORD:-secure_production_password}@postgres:5432/${DB_NAME:-medical_project_prod}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+    ports:
+      - "4005:4005"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - medical_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4005/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Client Frontend
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+    container_name: medical_client_prod
+    restart: unless-stopped
+    ports:
+      - "4001:80"
+    depends_on:
+      - backend
+    networks:
+      - medical_network
+
+  # Admin Panel
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.prod
+    container_name: medical_admin_prod
+    restart: unless-stopped
+    ports:
+      - "4002:80"
+    depends_on:
+      - backend
+    networks:
+      - medical_network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: medical_nginx_prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - backend
+      - client
+      - admin
+    networks:
+      - medical_network
+
+volumes:
+  postgres_data:
+
+networks:
+  medical_network:
+    driver: bridge

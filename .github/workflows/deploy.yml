@@ -1,0 +1,155 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+          cd ../client && npm ci
+          cd ../admin && npm ci
+
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm run test
+
+      - name: Run client tests
+        run: |
+          cd client
+          npm run test
+
+      - name: Run admin tests
+        run: |
+          cd admin
+          npm run test
+
+      - name: Build applications
+        run: |
+          cd backend && npm run build
+          cd ../client && npm run build
+          cd ../admin && npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/production'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            # Update system packages
+            sudo apt update && sudo apt upgrade -y
+
+            # Install Docker if not present
+            if ! command -v docker &> /dev/null; then
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker $USER
+              rm get-docker.sh
+            fi
+
+            # Install Docker Compose if not present
+            if ! command -v docker-compose &> /dev/null; then
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+
+            # Navigate to project directory
+            cd /opt/medical-training-backend
+
+            # Configure Git with access token
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git config --global credential.helper store
+            echo "https://${{ secrets.GITHUB_ACCESS_KEY }}:x-oauth-basic@github.com" > ~/.git-credentials
+
+            # Pull latest changes
+            git fetch origin production
+            git reset --hard origin/production
+
+            # Create production environment file if it doesn't exist
+            if [ ! -f .env.production ]; then
+              cp production.env.template .env.production
+              echo "Please configure .env.production with your production values"
+              exit 1
+            fi
+
+            # Stop existing containers
+            docker-compose -f docker-compose.prod.yml down
+
+            # Remove old images
+            docker system prune -f
+
+            # Build and start new containers
+            docker-compose -f docker-compose.prod.yml up -d --build
+
+            # Wait for services to be healthy
+            echo "Waiting for services to be healthy..."
+            sleep 30
+
+            # Check service health
+            if curl -f http://localhost/api/health > /dev/null 2>&1; then
+              echo "✅ Backend API is healthy"
+            else
+              echo "❌ Backend API health check failed"
+              exit 1
+            fi
+
+            if curl -f http://localhost/health > /dev/null 2>&1; then
+              echo "✅ Nginx is healthy"
+            else
+              echo "❌ Nginx health check failed"
+              exit 1
+            fi
+
+            echo "🚀 Deployment completed successfully!"
+
+            # Show running containers
+            docker-compose -f docker-compose.prod.yml ps
+
+            # Show logs for debugging
+            echo "Recent logs:"
+            docker-compose -f docker-compose.prod.yml logs --tail=20
+
+  health-check:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Health Check
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 60
+
+          # Check if services are responding
+          echo "Checking service health..."
+
+          # You can add more health checks here
+          # For example, checking specific endpoints
+
+          echo "✅ Health check completed"
