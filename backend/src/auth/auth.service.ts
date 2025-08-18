@@ -115,7 +115,9 @@ export class AuthService {
         profile: {
           create: {
             phone: createUserDto.phone,
-            dateOfBirth: createUserDto.dateOfBirth,
+            dateOfBirth: createUserDto.dateOfBirth
+              ? new Date(createUserDto.dateOfBirth)
+              : undefined,
             gender: createUserDto.gender,
           },
         },

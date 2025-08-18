@@ -19,8 +19,9 @@ const Login: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
+    // Clear any existing errors when component mounts
     clearError();
-  }, [clearError]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -43,6 +43,7 @@ export const adminAPI = {
   // Authentication
   login: (email: string, password: string) =>
     api.post("/admin/auth/login", { email, password }),
+  getProfile: () => api.get("/admin/profile"),
 
   // Users
   getUsers: (params?: any) => api.get("/admin/users", { params }),

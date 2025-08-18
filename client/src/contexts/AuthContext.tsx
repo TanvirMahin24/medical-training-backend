@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
           // Verify token and get user profile
-          const response = await api.get("/api/auth/profile");
+          const response = await api.get("/auth/profile");
           dispatch({
             type: "AUTH_SUCCESS",
             payload: { user: response.data, token },
@@ -149,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     dispatch({ type: "AUTH_START" });
     try {
-      const response = await api.post("/api/auth/login", {
+      const response = await api.post("/auth/login", {
         email,
         password,
         ipAddress: "127.0.0.1", // In production, get real IP
@@ -178,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData) => {
     dispatch({ type: "AUTH_START" });
     try {
-      await api.post("/api/auth/register", userData);
+      await api.post("/auth/register", userData);
       dispatch({ type: "AUTH_FAILURE", payload: "" }); // Clear any previous errors
     } catch (error: any) {
       const errorMessage =
@@ -191,7 +191,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       if (state.token) {
-        await api.post("/api/auth/logout");
+        await api.post("/auth/logout");
       }
     } catch (error) {
       console.error("Logout error:", error);

@@ -60,10 +60,28 @@ export class CreateUserDto {
   @ApiProperty({
     description: 'User gender',
     required: false,
-    example: 'Male',
-    enum: ['Male', 'Female', 'Other'],
+    example: 'male',
+    enum: [
+      'male',
+      'female',
+      'other',
+      'prefer-not-to-say',
+      'Male',
+      'Female',
+      'Other',
+      'Prefer-not-to-say',
+    ],
   })
   @IsOptional()
-  @IsEnum(['Male', 'Female', 'Other'])
+  @IsEnum([
+    'male',
+    'female',
+    'other',
+    'prefer-not-to-say',
+    'Male',
+    'Female',
+    'Other',
+    'Prefer-not-to-say',
+  ])
   gender?: string;
 }

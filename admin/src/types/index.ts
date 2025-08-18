@@ -11,6 +11,7 @@ export interface User {
     | "CANCELLED"
     | "PAST_DUE"
     | "UNPAID";
+  isEmailVerified?: boolean;
   profile?: UserProfile;
   createdAt: string;
   updatedAt: string;

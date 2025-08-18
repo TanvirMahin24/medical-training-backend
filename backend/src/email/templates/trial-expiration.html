@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Trial Expiration Reminder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: #ffc107;
+        color: #333;
+        padding: 20px;
+        text-align: center;
+      }
+      .content {
+        padding: 20px;
+        background: #f9f9f9;
+      }
+      .days-left {
+        font-size: 24px;
+        font-weight: bold;
+        color: #dc3545;
+        text-align: center;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Trial Expiration Reminder</h1>
+      </div>
+      <div class="content">
+        <h2>Hello {{firstName}}!</h2>
+        <p>
+          Your trial period for the Medical Training Platform is about to
+          expire.
+        </p>
+        <p style="text-align: center">
+          <span class="days-left">{{daysLeft}} days left</span>
+        </p>
+        <p>
+          Don't lose access to your progress and learning materials. Upgrade now
+          to continue your medical training journey!
+        </p>
+        <p style="text-align: center">
+          <a href="#" class="button">Upgrade Now</a>
+        </p>
+        <p>With a subscription, you'll get:</p>
+        <ul>
+          <li>Unlimited access to all case simulations</li>
+          <li>Progress tracking and analytics</li>
+          <li>Certification programs</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+      <div class="footer">
+        <p>
+          Questions? Contact us at
+          <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -81,6 +81,16 @@ export class UpdateAdminUserDto {
   role?: UserRole;
 
   @ApiProperty({
+    description: 'Subscription status',
+    enum: SubscriptionStatus,
+    example: SubscriptionStatus.ACTIVE,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(SubscriptionStatus)
+  subscriptionStatus?: SubscriptionStatus;
+
+  @ApiProperty({
     description: 'Whether user is active',
     example: true,
     required: false,
@@ -88,6 +98,15 @@ export class UpdateAdminUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({
+    description: 'Whether user email is verified',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
 }
 
 export class AdminUserResponseDto {
@@ -122,6 +141,11 @@ export class AdminUserResponseDto {
     enum: SubscriptionStatus,
   })
   subscriptionStatus: SubscriptionStatus;
+
+  @ApiProperty({
+    description: 'Whether user email is verified',
+  })
+  isEmailVerified: boolean;
 
   @ApiProperty({
     description: 'User creation date',

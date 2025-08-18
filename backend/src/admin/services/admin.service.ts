@@ -1,8 +1,16 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminLoginDto, AdminLoginResponseDto } from '../dto/admin-login.dto';
-import { CreateAdminUserDto, UpdateAdminUserDto, AdminUserResponseDto } from '../dto/admin-user.dto';
+import {
+  CreateAdminUserDto,
+  UpdateAdminUserDto,
+  AdminUserResponseDto,
+} from '../dto/admin-user.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -35,7 +43,10 @@ export class AdminService {
     }
 
     // Verify password
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -56,11 +67,17 @@ export class AdminService {
     };
   }
 
-  async getUsers(page: number = 1, limit: number = 10, search?: string, role?: string, status?: string) {
+  async getUsers(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    role?: string,
+    status?: string,
+  ) {
     const skip = (page - 1) * limit;
-    
+
     const where: any = {};
-    
+
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
@@ -68,11 +85,11 @@ export class AdminService {
         { lastName: { contains: search, mode: 'insensitive' } },
       ];
     }
-    
+
     if (role && role !== 'all') {
       where.role = role;
     }
-    
+
     if (status && status !== 'all') {
       where.subscriptionStatus = status;
     }
@@ -87,6 +104,7 @@ export class AdminService {
           lastName: true,
           role: true,
           subscriptionStatus: true,
+          isEmailVerified: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -116,6 +134,7 @@ export class AdminService {
         lastName: true,
         role: true,
         subscriptionStatus: true,
+        isEmailVerified: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -128,7 +147,10 @@ export class AdminService {
     return user;
   }
 
-  async updateUser(id: string, updateDto: UpdateAdminUserDto): Promise<AdminUserResponseDto> {
+  async updateUser(
+    id: string,
+    updateDto: UpdateAdminUserDto,
+  ): Promise<AdminUserResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -137,9 +159,23 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
+    // Prepare update data, filtering out undefined values
+    const updateData: any = {};
+    if (updateDto.firstName !== undefined)
+      updateData.firstName = updateDto.firstName;
+    if (updateDto.lastName !== undefined)
+      updateData.lastName = updateDto.lastName;
+    if (updateDto.role !== undefined) updateData.role = updateDto.role;
+    if (updateDto.subscriptionStatus !== undefined)
+      updateData.subscriptionStatus = updateDto.subscriptionStatus;
+    if (updateDto.isEmailVerified !== undefined)
+      updateData.isEmailVerified = updateDto.isEmailVerified;
+    if (updateDto.isActive !== undefined)
+      updateData.isActive = updateDto.isActive;
+
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateDto,
+      data: updateData,
       select: {
         id: true,
         email: true,
@@ -147,6 +183,7 @@ export class AdminService {
         lastName: true,
         role: true,
         subscriptionStatus: true,
+        isEmailVerified: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -175,22 +212,18 @@ export class AdminService {
   }
 
   async getStats() {
-    const [
-      totalUsers,
-      activeUsers,
-      totalCases,
-      totalRevenue,
-    ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({
-        where: { subscriptionStatus: { in: ['ACTIVE', 'TRIAL'] } },
-      }),
-      this.prisma.medicalCase.count(),
-      this.prisma.payment.aggregate({
-        where: { status: 'COMPLETED' },
-        _sum: { amount: true },
-      }),
-    ]);
+    const [totalUsers, activeUsers, totalCases, totalRevenue] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.user.count({
+          where: { subscriptionStatus: { in: ['ACTIVE', 'TRIAL'] } },
+        }),
+        this.prisma.medicalCase.count(),
+        this.prisma.payment.aggregate({
+          where: { status: 'COMPLETED' },
+          _sum: { amount: true },
+        }),
+      ]);
 
     return {
       totalUsers,

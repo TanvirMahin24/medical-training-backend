@@ -18,7 +18,11 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: configService
-      .get('CORS_ORIGIN', 'http://localhost:4001')
+      .get(
+        'CORS_ORIGIN',
+        // Allow local client and admin by default
+        'http://localhost:4001,http://localhost:4002',
+      )
       .split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

@@ -107,27 +107,43 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(adminReducer, initialState);
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    if (token) {
-      // Verify token and get admin user info
-      // This would typically call an endpoint to validate the token
-      dispatch({
-        type: "ADMIN_SUCCESS",
-        payload: { user: {} as AdminUser, token },
-      });
-    } else {
-      dispatch({ type: "LOGOUT" });
-    }
+    const validateToken = async () => {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        dispatch({ type: "LOGOUT" });
+        return;
+      }
+
+      try {
+        // Validate token by calling profile endpoint
+        const response = await adminAPI.getProfile();
+        const user = response.data;
+        
+        dispatch({
+          type: "ADMIN_SUCCESS",
+          payload: { user, token },
+        });
+      } catch (error) {
+        // Token is invalid, clear it and redirect to login
+        localStorage.removeItem("adminToken");
+        dispatch({ type: "LOGOUT" });
+      }
+    };
+
+    validateToken();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       dispatch({ type: "ADMIN_START" });
       const response = await adminAPI.login(email, password);
-      const { user, token } = response.data;
+      const { user, accessToken } = response.data;
 
-      localStorage.setItem("adminToken", token);
-      dispatch({ type: "ADMIN_SUCCESS", payload: { user, token } });
+      localStorage.setItem("adminToken", accessToken);
+      dispatch({
+        type: "ADMIN_SUCCESS",
+        payload: { user, token: accessToken },
+      });
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed";
       dispatch({ type: "ADMIN_FAILURE", payload: errorMessage });

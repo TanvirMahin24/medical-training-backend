@@ -10,34 +10,59 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
-    this.initializeTransporter();
+    // Initialize transporter asynchronously
+    this.initializeTransporter().catch((error) => {
+      this.logger.error(
+        'Failed to initialize email service in constructor:',
+        error,
+      );
+    });
   }
 
   private async initializeTransporter() {
     const isDevelopment = this.configService.get('NODE_ENV') === 'development';
+    const smtpHost = this.configService.get('SMTP_HOST');
+    const smtpPort = this.configService.get('SMTP_PORT');
+    const smtpUser = this.configService.get('SMTP_USER');
+    const smtpPass = this.configService.get('SMTP_PASS');
 
-    if (isDevelopment) {
-      // Use Mailhog for development
+    // Check if we have SMTP credentials configured
+    if (smtpHost && smtpPort && smtpUser && smtpPass) {
+      // Use configured SMTP (Gmail, etc.)
+      const isGmail = smtpHost.includes('gmail.com');
+
       this.transporter = nodemailer.createTransport({
-        host: this.configService.get('SMTP_HOST', 'localhost'),
-        port: this.configService.get('SMTP_PORT', 1025),
+        host: smtpHost,
+        port: parseInt(smtpPort.toString()),
+        secure: isGmail ? true : this.configService.get('SMTP_SECURE', false), // Gmail requires SSL
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+        // Gmail specific settings
+        ...(isGmail && {
+          service: 'gmail',
+          tls: {
+            rejectUnauthorized: false,
+          },
+        }),
+      });
+    } else if (isDevelopment) {
+      // Fallback to Mailhog for development if no SMTP configured
+      this.logger.warn(
+        'No SMTP credentials found, using Mailhog for development',
+      );
+      this.transporter = nodemailer.createTransport({
+        host: 'localhost',
+        port: 1025,
         secure: false,
         auth: {
-          user: this.configService.get('SMTP_USER'),
-          pass: this.configService.get('SMTP_PASS'),
+          user: '',
+          pass: '',
         },
       });
     } else {
-      // Use production SMTP
-      this.transporter = nodemailer.createTransport({
-        host: this.configService.get('SMTP_HOST'),
-        port: this.configService.get('SMTP_PORT'),
-        secure: this.configService.get('SMTP_SECURE', false),
-        auth: {
-          user: this.configService.get('SMTP_USER'),
-          pass: this.configService.get('SMTP_PASS'),
-        },
-      });
+      throw new Error('SMTP credentials not configured for production');
     }
 
     // Verify connection
@@ -49,7 +74,15 @@ export class EmailService {
     }
   }
 
+  private async ensureTransporterReady() {
+    if (!this.transporter) {
+      await this.initializeTransporter();
+    }
+  }
+
   async sendVerificationEmail(email: string, firstName: string, token: string) {
+    await this.ensureTransporterReady();
+
     const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify-email/${token}`;
 
     const htmlContent = this.getEmailTemplate('verification', {
@@ -81,6 +114,8 @@ export class EmailService {
     firstName: string,
     token: string,
   ) {
+    await this.ensureTransporterReady();
+
     const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
 
     const htmlContent = this.getEmailTemplate('password-reset', {
@@ -112,6 +147,8 @@ export class EmailService {
     firstName: string,
     planType: string,
   ) {
+    await this.ensureTransporterReady();
+
     const htmlContent = this.getEmailTemplate('subscription-confirmation', {
       firstName,
       planType,
@@ -141,6 +178,8 @@ export class EmailService {
     firstName: string,
     daysLeft: number,
   ) {
+    await this.ensureTransporterReady();
+
     const htmlContent = this.getEmailTemplate('trial-expiration', {
       firstName,
       daysLeft,
@@ -166,26 +205,54 @@ export class EmailService {
   }
 
   private getEmailTemplate(templateName: string, data: any): string {
-    const templatePath = path.join(
-      __dirname,
-      'templates',
-      `${templateName}.html`,
-    );
+    // Try multiple possible paths for template resolution
+    const possiblePaths = [
+      path.join(__dirname, 'templates', `${templateName}.html`),
+      path.join(
+        process.cwd(),
+        'src',
+        'email',
+        'templates',
+        `${templateName}.html`,
+      ),
+      path.join(
+        process.cwd(),
+        'dist',
+        'src',
+        'email',
+        'templates',
+        `${templateName}.html`,
+      ),
+    ];
 
-    try {
-      let template = fs.readFileSync(templatePath, 'utf8');
+    for (const templatePath of possiblePaths) {
+      try {
+        if (fs.existsSync(templatePath)) {
+          let template = fs.readFileSync(templatePath, 'utf8');
 
-      // Replace placeholders with actual data
-      Object.keys(data).forEach((key) => {
-        const regex = new RegExp(`{{${key}}}`, 'g');
-        template = template.replace(regex, data[key]);
-      });
+          // Replace placeholders with actual data
+          Object.keys(data).forEach((key) => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            template = template.replace(regex, data[key]);
+          });
 
-      return template;
-    } catch (error) {
-      this.logger.warn(`Template ${templateName} not found, using fallback`);
-      return this.getFallbackTemplate(templateName, data);
+          this.logger.log(
+            `Template ${templateName} loaded from: ${templatePath}`,
+          );
+          return template;
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to load template from ${templatePath}: ${error.message}`,
+        );
+        continue;
+      }
     }
+
+    this.logger.warn(
+      `Template ${templateName} not found in any location, using fallback`,
+    );
+    return this.getFallbackTemplate(templateName, data);
   }
 
   private getFallbackTemplate(templateName: string, data: any): string {
