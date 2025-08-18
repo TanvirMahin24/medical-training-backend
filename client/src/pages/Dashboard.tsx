@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { motion } from "framer-motion";
+import api from "../utils/api";
 
 interface DashboardStats {
   totalCases: number;
@@ -35,54 +36,39 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading dashboard data
     const loadDashboardData = async () => {
       try {
-        // In a real app, this would fetch from the API
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setIsLoading(true);
+        const [summaryRes, badgesRes] = await Promise.all([
+          api.get("/progress/summary"),
+          api.get("/badges/me"),
+        ]);
+        const summary = summaryRes.data;
+        const badges = badgesRes.data || [];
 
-        // Mock data for demonstration
         setStats({
-          totalCases: 24,
-          completedCases: 18,
-          currentStreak: 7,
-          totalScore: 2840,
-          badgesEarned: 8,
-          averageScore: 89.2,
+          totalCases: summary.totalCases,
+          completedCases: summary.completedCases,
+          currentStreak: summary.currentStreak,
+          totalScore: (summary.recentScores || []).reduce(
+            (s: number, r: any) => s + (r.score || 0),
+            0
+          ),
+          badgesEarned: badges.length,
+          averageScore: summary.averageScore,
         });
 
-        setRecentActivity([
-          {
-            id: "1",
-            type: "case_completed",
-            title: "Hypertension Management - John Smith",
-            description: "Completed with 92% accuracy",
-            timestamp: "2 hours ago",
-            score: 92,
-          },
-          {
-            id: "2",
-            type: "badge_earned",
-            title: "Streak Master",
-            description: "Maintained 7-day learning streak",
-            timestamp: "1 day ago",
-          },
-          {
-            id: "3",
-            type: "case_completed",
-            title: "Diabetes Management - Sarah Johnson",
-            description: "Completed with 87% accuracy",
-            timestamp: "2 days ago",
-            score: 87,
-          },
-          {
-            id: "4",
-            type: "streak_milestone",
-            title: "Week Warrior",
-            description: "Completed 5 cases this week",
-            timestamp: "3 days ago",
-          },
-        ]);
+        const recent = (summary.recentScores || []).map(
+          (r: any, idx: number) => ({
+            id: String(idx + 1),
+            type: "case_completed" as const,
+            title: r.caseTitle,
+            description: `Completed with ${r.score}% accuracy`,
+            timestamp: new Date(r.date).toLocaleString(),
+            score: r.score,
+          })
+        );
+        setRecentActivity(recent);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
       } finally {

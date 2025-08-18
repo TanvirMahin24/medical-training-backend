@@ -256,6 +256,19 @@ const CaseSimulation: React.FC = () => {
     const interaction = getInteraction();
     setCanInteract(interaction);
 
+    // Debug logging
+    if (interaction) {
+      console.log(
+        "Can interact with:",
+        interaction.name,
+        "Type:",
+        interaction.type
+      );
+      console.log("Current task index:", currentTaskIndex);
+      console.log("Current task:", tasks[currentTaskIndex]);
+      console.log("Completed tasks:", simulationState.completedTasks);
+    }
+
     if (isModalOpen && canInteract) {
       const playerCenterX = simulationState.playerPosition.x + 20;
       const playerCenterY = simulationState.playerPosition.y + 20;
@@ -277,6 +290,9 @@ const CaseSimulation: React.FC = () => {
     npcs,
     isModalOpen,
     canInteract,
+    currentTaskIndex,
+    tasks,
+    simulationState.completedTasks,
   ]);
 
   const getInteraction = useCallback(() => {
@@ -284,6 +300,8 @@ const CaseSimulation: React.FC = () => {
     const playerCenterY = simulationState.playerPosition.y + 20;
 
     const allInteractables = [...interactableObjects, ...npcs];
+    let closestInteraction = null;
+    let closestDistance = Infinity;
 
     for (const object of allInteractables) {
       const objectCenterX = object.x + (object.width || 0) / 2;
@@ -301,17 +319,40 @@ const CaseSimulation: React.FC = () => {
       const interactionThreshold = objectRadius + 15;
 
       if (distance < interactionThreshold) {
-        return object;
+        // Prioritize NPCs (patients, doctors) over objects (rooms, equipment)
+        // NPCs get a higher priority by reducing their effective distance
+        const priorityDistance =
+          object.type === "patient" ||
+          object.type === "doctor" ||
+          object.type === "staff"
+            ? distance * 0.7 // Give NPCs 30% priority boost
+            : distance;
+
+        if (priorityDistance < closestDistance) {
+          closestDistance = priorityDistance;
+          closestInteraction = object;
+        }
       }
     }
 
-    return null;
+    return closestInteraction;
   }, [simulationState.playerPosition, interactableObjects, npcs]);
 
   const handleInteraction = async (object: InteractiveObject | NPC) => {
+    console.log(
+      "Handling interaction with:",
+      object.name,
+      "Type:",
+      object.type
+    );
+    console.log("Current task index:", currentTaskIndex);
+    console.log("Current task:", tasks[currentTaskIndex]);
+
     const content = getModalContent(object);
     if (content) {
       setIsModalOpen(true);
+    } else {
+      console.log("No modal content available for this interaction");
     }
   };
 
@@ -337,6 +378,22 @@ const CaseSimulation: React.FC = () => {
       );
     }
 
+    // Check if this task is already completed
+    if (simulationState.completedTasks.includes(currentTask.id)) {
+      return (
+        <div>
+          <h3 className="text-xl font-bold mb-4">Task Completed</h3>
+          <p className="mb-4">This task has already been completed.</p>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Continue
+          </button>
+        </div>
+      );
+    }
+
     switch (object.type) {
       case "check_in":
         if (currentTask.type === "front_desk_check_in") {
@@ -346,6 +403,7 @@ const CaseSimulation: React.FC = () => {
         }
         break;
 
+      case "patient":
       case "patient_interaction":
         if (currentTask.type === "patient_interaction") {
           return (
@@ -361,6 +419,25 @@ const CaseSimulation: React.FC = () => {
         if (currentTask.type === "chart_vitals") {
           return (
             <ChartingModal task={currentTask} onComplete={handleTaskComplete} />
+          );
+        }
+        if (currentTask.type === "history_physical") {
+          return (
+            <HistoryPhysicalModal
+              task={currentTask}
+              onComplete={handleTaskComplete}
+            />
+          );
+        }
+        break;
+
+      case "equipment":
+        if (currentTask.type === "procedure") {
+          return (
+            <ProcedureModal
+              task={currentTask}
+              onComplete={handleTaskComplete}
+            />
           );
         }
         break;
@@ -388,7 +465,24 @@ const CaseSimulation: React.FC = () => {
         break;
     }
 
-    return null;
+    // If no specific modal content, show a generic interaction
+    return (
+      <div>
+        <h3 className="text-xl font-bold mb-4">Interaction</h3>
+        <p className="mb-4">
+          Interacting with {object.name} ({object.type})
+        </p>
+        <p className="mb-4 text-sm text-gray-300">
+          Current task: {currentTask.description}
+        </p>
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Close
+        </button>
+      </div>
+    );
   };
 
   const handleTaskComplete = async (taskId: string, score: number) => {
@@ -409,11 +503,48 @@ const CaseSimulation: React.FC = () => {
         currentTask: result.nextTask,
       }));
 
-      setCurrentTaskIndex((prev) => prev + 1);
+      // Handle patient movement when rooming
+      if (tasks[currentTaskIndex].type === "room_patient") {
+        const patientId = tasks[currentTaskIndex].patient_id;
+        const roomId = tasks[currentTaskIndex].room_id;
+
+        if (patientId && roomId) {
+          // Find the patient and room
+          const patient = npcs.find((npc) => npc.id === patientId);
+          const room = interactableObjects.find((obj) => obj.id === roomId);
+
+          if (patient && room) {
+            // Move patient to the center of the room
+            setNpcs((prev) =>
+              prev.map((npc) =>
+                npc.id === patientId
+                  ? {
+                      ...npc,
+                      x: room.x + room.width / 2 - 20, // Center in room
+                      y: room.y + room.height / 2 - 20,
+                      location: roomId, // Update patient location
+                    }
+                  : npc
+              )
+            );
+
+            // Mark room as occupied
+            setInteractableObjects((prev) =>
+              prev.map((obj) =>
+                obj.id === roomId ? { ...obj, status: "occupied" } : obj
+              )
+            );
+          }
+        }
+      }
+
+      // Move to next task
+      const nextTaskIndex = currentTaskIndex + 1;
+      setCurrentTaskIndex(nextTaskIndex);
       setIsModalOpen(false);
 
       // Check if all tasks are completed
-      if (currentTaskIndex >= tasks.length - 1) {
+      if (nextTaskIndex >= tasks.length) {
         setSimulationState((prev) => ({ ...prev, isShiftOver: true }));
       }
     } catch (error) {
@@ -441,7 +572,7 @@ const CaseSimulation: React.FC = () => {
   ]);
 
   return (
-    <div className="w-screen h-screen bg-gray-800 text-white flex flex-col relative">
+    <div className="w-full h-screen bg-gray-800 text-white flex flex-col relative">
       {/* Top Bar */}
       <div className="w-full bg-gray-900 p-4 flex justify-between items-center shadow-lg z-10">
         <h1 className="text-2xl font-bold">Medical Simulation</h1>
@@ -459,21 +590,31 @@ const CaseSimulation: React.FC = () => {
             Tasks
           </div>
         </div>
-        <button
-          onClick={() =>
-            setSimulationState((prev) => ({ ...prev, isShiftOver: true }))
-          }
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors"
-        >
-          End Shift
-        </button>
+        <div className="flex items-center space-x-4">
+          {/* Debug Info */}
+          <div className="text-sm text-gray-300 bg-gray-800 px-3 py-1 rounded">
+            Task: {currentTaskIndex + 1}/{tasks.length}
+          </div>
+          <div className="text-sm text-gray-300 bg-gray-800 px-3 py-1 rounded">
+            {canInteract ? `Near: ${canInteract.name}` : "No interaction"}
+          </div>
+          <button
+            onClick={() =>
+              setSimulationState((prev) => ({ ...prev, isShiftOver: true }))
+            }
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors"
+          >
+            End Shift
+          </button>
+        </div>
       </div>
 
       <div className="flex-grow flex">
         {/* Game Area */}
         <div
           ref={gameAreaRef}
-          className="flex-grow h-full bg-gray-700 relative overflow-hidden"
+          className="flex-grow h-full bg-gray-700 relative overflow-hidden min-h-0"
+          style={{ minHeight: "400px" }}
         >
           {/* Player */}
           <motion.div
@@ -490,7 +631,11 @@ const CaseSimulation: React.FC = () => {
           {interactableObjects.map((obj) => (
             <div
               key={obj.id}
-              className="absolute bg-green-600 rounded-md flex items-center justify-center font-bold text-sm p-2 shadow-xl"
+              className={`absolute rounded-md flex items-center justify-center font-bold text-sm p-2 shadow-xl transition-all duration-200 ${
+                canInteract?.id === obj.id
+                  ? "ring-4 ring-yellow-400 ring-opacity-75"
+                  : ""
+              }`}
               style={{
                 left: obj.x,
                 top: obj.y,
@@ -509,8 +654,17 @@ const CaseSimulation: React.FC = () => {
           {npcs.map((npc) => (
             <div
               key={npc.id}
-              className="absolute w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-xs font-semibold shadow-md"
-              style={{ left: npc.x, top: npc.y, zIndex: 9 }}
+              className={`absolute w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold shadow-md transition-all duration-200 ${
+                canInteract?.id === npc.id
+                  ? "ring-4 ring-yellow-400 ring-opacity-75 scale-110"
+                  : ""
+              }`}
+              style={{
+                left: npc.x,
+                top: npc.y,
+                zIndex: 9,
+                backgroundColor: npc.type === "patient" ? "#ff6b6b" : "#ffd93d",
+              }}
             >
               {npc.name
                 .split(" ")
@@ -521,16 +675,20 @@ const CaseSimulation: React.FC = () => {
 
           {/* Interaction Prompt */}
           {canInteract && !isModalOpen && (
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 px-6 py-3 rounded-lg shadow-2xl">
-              <p className="text-lg">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black bg-opacity-80 px-6 py-3 rounded-lg shadow-2xl border border-yellow-400">
+              <p className="text-lg font-semibold text-yellow-400">
                 Press [E] to interact with {canInteract.name}
+              </p>
+              <p className="text-sm text-gray-300 mt-1">
+                Type: {canInteract.type} | Current Task:{" "}
+                {tasks[currentTaskIndex]?.description || "None"}
               </p>
             </div>
           )}
         </div>
 
         {/* Task List Sidebar */}
-        <div className="w-80 bg-gray-900 p-6 overflow-y-auto shadow-inner">
+        <div className="w-80 bg-gray-900 p-6 overflow-y-auto shadow-inner flex-shrink-0">
           <h2 className="text-2xl font-bold mb-6 border-b-2 border-gray-700 pb-2">
             Task List
           </h2>
@@ -716,6 +874,26 @@ const ChartingModal: React.FC<ModalProps> = ({ task, onComplete }) => {
   );
 };
 
+const HistoryPhysicalModal: React.FC<ModalProps> = ({ task, onComplete }) => {
+  const handleComplete = () => {
+    onComplete(task.id, task.score_impact);
+  };
+
+  return (
+    <div>
+      <h3 className="text-xl font-bold mb-4">History and Physical</h3>
+      <p className="mb-4">Complete the history and physical assessment.</p>
+
+      <button
+        onClick={handleComplete}
+        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
+      >
+        Complete Assessment
+      </button>
+    </div>
+  );
+};
+
 const RoomPatientModal: React.FC<ModalProps> = ({ task, onComplete }) => {
   const handleComplete = () => {
     onComplete(task.id, task.score_impact);
@@ -779,6 +957,89 @@ const DoctorInteractionModal: React.FC<ModalProps> = ({ task, onComplete }) => {
       </div>
     </div>
   );
+};
+
+const ProcedureModal: React.FC<ModalProps> = ({ task, onComplete }) => {
+  const [procedureStep, setProcedureStep] = useState(1);
+
+  const handleProcedureStep = () => {
+    if (procedureStep < 3) {
+      setProcedureStep(procedureStep + 1);
+    } else {
+      // Complete the procedure
+      onComplete(task.id, task.score_impact);
+    }
+  };
+
+  const getProcedureContent = () => {
+    switch (procedureStep) {
+      case 1:
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">Procedure Setup</h3>
+            <p className="mb-4">
+              Preparing the {task.procedure_type} equipment...
+            </p>
+            <div className="mb-4 p-3 bg-gray-700 rounded">
+              <p className="text-sm">• Check equipment calibration</p>
+              <p className="text-sm">• Prepare necessary supplies</p>
+              <p className="text-sm">• Ensure patient is ready</p>
+            </div>
+            <button
+              onClick={handleProcedureStep}
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Next Step
+            </button>
+          </div>
+        );
+      case 2:
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">Performing Procedure</h3>
+            <p className="mb-4">
+              Executing the {task.procedure_type} procedure...
+            </p>
+            <div className="mb-4 p-3 bg-gray-700 rounded">
+              <p className="text-sm">• Following proper protocol</p>
+              <p className="text-sm">• Monitoring patient response</p>
+              <p className="text-sm">• Recording procedure data</p>
+            </div>
+            <button
+              onClick={handleProcedureStep}
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Next Step
+            </button>
+          </div>
+        );
+      case 3:
+        return (
+          <div>
+            <h3 className="text-xl font-bold mb-4">Procedure Complete</h3>
+            <p className="mb-4">
+              The {task.procedure_type} procedure has been completed
+              successfully.
+            </p>
+            <div className="mb-4 p-3 bg-green-700 rounded">
+              <p className="text-sm">• Procedure completed</p>
+              <p className="text-sm">• Results recorded</p>
+              <p className="text-sm">• Patient status updated</p>
+            </div>
+            <button
+              onClick={handleProcedureStep}
+              className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Complete Procedure
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return <div>{getProcedureContent()}</div>;
 };
 
 export default CaseSimulation;

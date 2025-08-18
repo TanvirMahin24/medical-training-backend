@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import api from "../utils/api";
 
 interface ProgressData {
   totalCases: number;
@@ -33,94 +34,14 @@ const Progress: React.FC = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState("month");
 
   useEffect(() => {
-    // Simulate loading progress data
     const loadProgressData = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Mock data for demonstration
-        const mockData: ProgressData = {
-          totalCases: 24,
-          completedCases: 18,
-          averageScore: 89.2,
-          totalTime: 420, // minutes
-          currentStreak: 7,
-          longestStreak: 14,
-          weeklyProgress: [
-            { week: "Week 1", casesCompleted: 3, averageScore: 85 },
-            { week: "Week 2", casesCompleted: 4, averageScore: 88 },
-            { week: "Week 3", casesCompleted: 5, averageScore: 92 },
-            { week: "Week 4", casesCompleted: 6, averageScore: 91 },
-          ],
-          categoryPerformance: [
-            {
-              category: "Cardiology",
-              casesCompleted: 6,
-              averageScore: 91,
-              totalTime: 120,
-            },
-            {
-              category: "Endocrinology",
-              casesCompleted: 4,
-              averageScore: 87,
-              totalTime: 80,
-            },
-            {
-              category: "Emergency Medicine",
-              casesCompleted: 3,
-              averageScore: 85,
-              totalTime: 75,
-            },
-            {
-              category: "Pediatrics",
-              casesCompleted: 3,
-              averageScore: 89,
-              totalTime: 54,
-            },
-            {
-              category: "Psychiatry",
-              casesCompleted: 2,
-              averageScore: 92,
-              totalTime: 44,
-            },
-          ],
-          recentScores: [
-            {
-              caseTitle: "Hypertension Management",
-              score: 92,
-              date: "2024-01-15",
-              timeSpent: 15,
-            },
-            {
-              caseTitle: "Diabetes Management",
-              score: 87,
-              date: "2024-01-14",
-              timeSpent: 20,
-            },
-            {
-              caseTitle: "Chest Pain Assessment",
-              score: 85,
-              date: "2024-01-13",
-              timeSpent: 25,
-            },
-            {
-              caseTitle: "Pediatric Fever",
-              score: 89,
-              date: "2024-01-12",
-              timeSpent: 18,
-            },
-            {
-              caseTitle: "Depression Screening",
-              score: 94,
-              date: "2024-01-11",
-              timeSpent: 22,
-            },
-          ],
-        };
-
-        setProgressData(mockData);
+        setIsLoading(true);
+        const res = await api.get("/progress/summary");
+        setProgressData(res.data);
       } catch (error) {
         console.error("Failed to load progress data:", error);
+        setProgressData(null);
       } finally {
         setIsLoading(false);
       }
