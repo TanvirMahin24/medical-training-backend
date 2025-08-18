@@ -70,6 +70,10 @@ export const adminAPI = {
   getSubscriptions: (params?: any) =>
     api.get("/admin/subscriptions", { params }),
   getSubscription: (id: string) => api.get(`/admin/subscriptions/${id}`),
+  createSubscription: (data: any) => api.post("/admin/subscriptions", data),
+  updateSubscription: (id: string, data: any) => api.put(`/admin/subscriptions/${id}`, data),
+  deleteSubscription: (id: string) => api.delete(`/admin/subscriptions/${id}`),
+  reactivateSubscription: (id: string) => api.post(`/admin/subscriptions/${id}/reactivate`),
 
   // Payments
   getPayments: (params?: any) => api.get("/admin/payments", { params }),

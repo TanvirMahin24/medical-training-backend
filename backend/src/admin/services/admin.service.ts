@@ -234,4 +234,278 @@ export class AdminService {
       userEngagement: 78.3, // Mock data for now
     };
   }
+
+  // Subscription Management Methods
+  async getSubscriptions(
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+    planType?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    if (planType && planType !== 'all') {
+      where.planType = planType;
+    }
+
+    const [subscriptions, total] = await Promise.all([
+      this.prisma.subscription.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.subscription.count({ where }),
+    ]);
+
+    return {
+      subscriptions,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getSubscriptionById(id: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    return subscription;
+  }
+
+  async createSubscription(createDto: any) {
+    const { userId, planType, stripeSubscriptionId, ...data } = createDto;
+
+    // Verify user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const subscription = await this.prisma.subscription.create({
+      data: {
+        userId,
+        planType,
+        stripeSubscriptionId,
+        status: 'ACTIVE',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        ...data,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    // Update user subscription status
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { subscriptionStatus: 'ACTIVE' },
+    });
+
+    return subscription;
+  }
+
+  async updateSubscription(id: string, updateDto: any) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id },
+      data: updateDto,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return updatedSubscription;
+  }
+
+  async cancelSubscription(id: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+        canceledAt: new Date(),
+        endedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    // Update user subscription status
+    await this.prisma.user.update({
+      where: { id: subscription.userId },
+      data: { subscriptionStatus: 'CANCELLED' },
+    });
+
+    return updatedSubscription;
+  }
+
+  async reactivateSubscription(id: string) {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id },
+      data: {
+        status: 'ACTIVE',
+        canceledAt: null,
+        endedAt: null,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    // Update user subscription status
+    await this.prisma.user.update({
+      where: { id: subscription.userId },
+      data: { subscriptionStatus: 'ACTIVE' },
+    });
+
+    return updatedSubscription;
+  }
+
+  async getSubscriptionPlans() {
+    // For now, return predefined plans
+    // In a real implementation, you might have a separate plans table
+    return [
+      {
+        id: 'basic',
+        name: 'Basic Plan',
+        description: 'Essential features for medical professionals',
+        price: 29.99,
+        features: ['Access to basic cases', 'Progress tracking', 'Basic analytics'],
+        isActive: true,
+      },
+      {
+        id: 'premium',
+        name: 'Premium Plan',
+        description: 'Advanced features for serious learners',
+        price: 59.99,
+        features: ['All cases', 'Advanced analytics', 'Priority support', 'Custom badges'],
+        isActive: true,
+      },
+      {
+        id: 'enterprise',
+        name: 'Enterprise Plan',
+        description: 'Full access for institutions and teams',
+        price: 99.99,
+        features: ['Team management', 'Advanced reporting', 'API access', 'Custom content'],
+        isActive: true,
+      },
+    ];
+  }
+
+  async createSubscriptionPlan(createDto: any) {
+    // In a real implementation, you would save this to a plans table
+    // For now, return the created plan data
+    return {
+      id: `plan_${Date.now()}`,
+      ...createDto,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  async updateSubscriptionPlan(id: string, updateDto: any) {
+    // In a real implementation, you would update the plan in a plans table
+    // For now, return the updated plan data
+    return {
+      id,
+      ...updateDto,
+      updatedAt: new Date(),
+    };
+  }
+
+  async deleteSubscriptionPlan(id: string) {
+    // In a real implementation, you would delete the plan from a plans table
+    // For now, just return success
+    return { message: 'Subscription plan deleted successfully' };
+  }
 }
