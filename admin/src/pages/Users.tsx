@@ -3,7 +3,6 @@ import {
   Users as UsersIcon,
   Search,
   Filter,
-  MoreHorizontal,
   Eye,
   Edit,
   Trash2,
@@ -259,7 +258,7 @@ const Users: React.FC = () => {
 
         {filteredUsers.length === 0 && (
           <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
               No users found
             </h3>

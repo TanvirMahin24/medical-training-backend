@@ -8,11 +8,7 @@ import {
   TrendingUp,
   Activity,
   Plus,
-  Eye,
-  Edit,
-  Trash2,
 } from "lucide-react";
-import { adminAPI } from "../utils/api";
 import { AdminStats } from "../types";
 
 const Dashboard: React.FC = () => {
