@@ -53,9 +53,8 @@ export class AuthService {
 
     // Create or update session
     await this.prisma.session.upsert({
-      where: { userId: user.id },
+      where: { token: refreshToken },
       update: {
-        token: refreshToken,
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         ipAddress: loginDto.ipAddress,
         userAgent: loginDto.userAgent,

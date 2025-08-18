@@ -70,9 +70,10 @@ async function main() {
   // Create sample medical cases
   const cases = await Promise.all([
     prisma.medicalCase.upsert({
-      where: { title: 'Hypertension Management - John Smith' },
+      where: { id: 'case-hypertension-001' },
       update: {},
       create: {
+        id: 'case-hypertension-001',
         title: 'Hypertension Management - John Smith',
         description:
           'A series of visits for John Smith, focusing on managing his hypertension and observing trends.',
@@ -122,9 +123,10 @@ async function main() {
       },
     }),
     prisma.medicalCase.upsert({
-      where: { title: 'Diabetes Management - Sarah Johnson' },
+      where: { id: 'case-diabetes-001' },
       update: {},
       create: {
+        id: 'case-diabetes-001',
         title: 'Diabetes Management - Sarah Johnson',
         description:
           'Help Sarah Johnson manage her diabetes through proper monitoring and education.',

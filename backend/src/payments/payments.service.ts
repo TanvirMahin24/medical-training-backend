@@ -19,7 +19,11 @@ export class PaymentsService {
     private prisma: PrismaService,
     private emailService: EmailService,
   ) {
-    this.stripe = new Stripe(this.configService.get('STRIPE_SECRET_KEY'), {
+    const stripeKey = this.configService.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+    this.stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
     });
   }
@@ -77,8 +81,8 @@ export class PaymentsService {
         const customer = await this.createCustomer(
           userId,
           user.email,
-          user.firstName,
-          user.lastName,
+          user.firstName || undefined,
+          user.lastName || undefined,
         );
         customerId = customer.id;
       }
@@ -199,8 +203,8 @@ export class PaymentsService {
         const customer = await this.createCustomer(
           userId,
           user.email,
-          user.firstName,
-          user.lastName,
+          user.firstName || undefined,
+          user.lastName || undefined,
         );
         customerId = customer.id;
       }
@@ -372,7 +376,7 @@ export class PaymentsService {
     return 'basic';
   }
 
-  private mapStripeStatus(stripeStatus: string): string {
+  private mapStripeStatus(stripeStatus: string): 'TRIAL' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'PAST_DUE' | 'UNPAID' {
     switch (stripeStatus) {
       case 'active':
         return 'ACTIVE';

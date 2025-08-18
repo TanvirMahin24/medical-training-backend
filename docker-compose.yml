@@ -6,11 +6,11 @@ services:
     image: postgres:15-alpine
     container_name: medical_training_postgres
     environment:
-      POSTGRES_DB: medical_training_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: medical-project
+      POSTGRES_USER: redflag_user
+      POSTGRES_PASSWORD: redflag_password
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
@@ -35,11 +35,13 @@ services:
       dockerfile: Dockerfile
     container_name: medical_training_backend
     ports:
-      - "3002:3002"
+      - "4005:4005"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/medical_training_db
+      - PORT=4005
+      - DATABASE_URL=postgresql://redflag_user:redflag_password@postgres:5432/medical-project?schema=public
       - REDIS_URL=redis://redis:6379
+      - CORS_ORIGIN=http://localhost:4001
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -57,10 +59,10 @@ services:
       dockerfile: Dockerfile
     container_name: medical_training_client
     ports:
-      - "3000:3000"
+      - "4001:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:3002
-      - REACT_APP_ADMIN_URL=http://localhost:3001
+      - REACT_APP_API_URL=http://localhost:4005/api
+
     volumes:
       - ./client:/app
       - /app/node_modules
@@ -77,9 +79,10 @@ services:
       dockerfile: Dockerfile
     container_name: medical_training_admin
     ports:
-      - "3001:3001"
+      - "4002:4002"
     environment:
-      - VITE_API_URL=http://localhost:3002
+      - VITE_API_URL=http://localhost:4005/api
+      - PORT=4002
     volumes:
       - ./admin:/app
       - /app/node_modules

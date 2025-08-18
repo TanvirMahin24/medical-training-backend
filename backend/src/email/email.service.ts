@@ -18,7 +18,7 @@ export class EmailService {
 
     if (isDevelopment) {
       // Use Mailhog for development
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.configService.get('SMTP_HOST', 'localhost'),
         port: this.configService.get('SMTP_PORT', 1025),
         secure: false,
@@ -29,7 +29,7 @@ export class EmailService {
       });
     } else {
       // Use production SMTP
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.configService.get('SMTP_HOST'),
         port: this.configService.get('SMTP_PORT'),
         secure: this.configService.get('SMTP_SECURE', false),

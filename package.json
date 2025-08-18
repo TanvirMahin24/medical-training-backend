@@ -1,7 +1,7 @@
 {
   "name": "medical-training-backend",
   "version": "1.0.0",
-  "description": "Comprehensive medical training platform with NestJS backend, React client, and admin panel",
+  "description": "Comprehensive medical training platform with NestJS backend and React client",
   "private": true,
   "workspaces": [
     "backend",
@@ -10,8 +10,9 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:client\" \"npm run dev:admin\"",
+    "dev:core": "concurrently \"npm run dev:backend\" \"npm run dev:client\"",
     "dev:backend": "cd backend && npm run start:dev",
-    "dev:client": "cd client && npm start",
+    "dev:client": "cd client && PORT=4001 REACT_APP_API_URL=http://localhost:4005/api npm run dev",
     "dev:admin": "cd admin && npm run dev",
     "build": "npm run build:backend && npm run build:client && npm run build:admin",
     "build:backend": "cd backend && npm run build",

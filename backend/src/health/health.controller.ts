@@ -7,13 +7,15 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
+import { PrismaService } from '../prisma/prisma.service';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(
     private health: HealthCheckService,
-    private prisma: PrismaHealthIndicator,
+    private prismaHealth: PrismaHealthIndicator,
+    private prisma: PrismaService,
     private memory: MemoryHealthIndicator,
     private disk: DiskHealthIndicator,
   ) {}
@@ -26,7 +28,7 @@ export class HealthController {
   check() {
     return this.health.check([
       // Database health check
-      () => this.prisma.pingCheck('database'),
+      () => this.prismaHealth.pingCheck('database', this.prisma),
 
       // Memory health check
       () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024), // 300MB

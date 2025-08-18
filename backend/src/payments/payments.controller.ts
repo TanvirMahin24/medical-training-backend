@@ -8,9 +8,9 @@ import {
   Param,
   HttpCode,
   HttpStatus,
-  RawBodyRequest,
   Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -111,10 +111,15 @@ export class PaymentsController {
     }
 
     // Verify webhook signature
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+    }
+    
     const event = this.paymentsService['stripe'].webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET,
+      webhookSecret,
     );
 
     return this.paymentsService.handleWebhook(event);
