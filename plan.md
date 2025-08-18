@@ -131,6 +131,101 @@ medical-training-backend/
 - Loading states and error handling
 - Offline capability for completed cases
 
+## Phase 3.5: Interactive Case Simulation Engine (NEW)
+
+### 3.5.1 Enhanced Database Schema
+
+```sql
+-- Enhanced medical_cases table
+- content: JSON structure for interactive scenarios
+  - clinic_layout: Interactive clinic map with objects
+  - patient_info: Patient demographics and medical history
+  - visits: Array of patient visits with evolving conditions
+  - tasks_for_visit: Interactive tasks with dialogue options
+  - expected_vitals: Dynamic vital signs per visit
+  - medical_history: Patient medical background
+  - patient_arrivals: Scheduled appointment times
+
+-- New simulation_sessions table
+- id, user_id, case_id, current_visit, current_task
+- player_position: {x, y} coordinates
+- game_state: JSON with current simulation state
+- score: Real-time scoring
+- time_spent: Session duration
+- completed_tasks: Array of finished tasks
+- patient_state: Current patient status
+```
+
+### 3.5.2 Interactive Simulation Features
+
+- **Top-down Clinic Layout**: 2D clinic environment with interactive objects
+- **Player Movement System**: WASD key controls with smooth animation
+- **Interactive Objects**: Front desk, exam rooms, medical equipment, staff NPCs
+- **Dynamic Task Progression**: Tasks unlock based on previous actions
+- **Patient Interaction System**: Dialogue choices with consequences
+- **Real-time Scoring**: Points for correct actions, penalties for mistakes
+- **Clinic Environment**: Exam rooms, waiting areas, medical equipment
+
+### 3.5.3 Mini-Game Integration
+
+- **EKG Mini-Game**: Interactive EKG interpretation
+- **Blood Pressure Mini-Game**: Simulated BP measurement
+- **Vital Signs Recording**: Interactive vital signs input
+- **Patient Charting**: Electronic medical record simulation
+- **Procedure Simulations**: Step-by-step medical procedures
+
+### 3.5.4 Case Scenario Structure
+
+```json
+{
+  "case_id": "uuid",
+  "case_name": "John Smith - Hypertension Management",
+  "description": "Multi-visit case with evolving condition",
+  "patient_info": {
+    "id": "patient-smith",
+    "name": "John Smith",
+    "age": 45,
+    "gender": "Male",
+    "chief_complaint": "Hypertension follow-up"
+  },
+  "visits": [
+    {
+      "visit_number": 1,
+      "tasks_for_visit": [
+        {
+          "id": "task-check-in",
+          "type": "front_desk_check_in",
+          "dialogue_options": [],
+          "expected_patient_id": "patient-smith"
+        },
+        {
+          "id": "task-greet",
+          "type": "patient_interaction",
+          "dialogue_options": [
+            {
+              "text": "Hello, Mr. Smith? My name is Alex...",
+              "score_impact": 50,
+              "consequence": "patient_follows"
+            }
+          ]
+        }
+      ],
+      "expected_vitals": {...},
+      "medical_history": {...}
+    }
+  ],
+  "patient_arrivals": [...]
+}
+```
+
+### 3.5.5 Simulation State Management
+
+- **Game Loop**: Real-time game loop with requestAnimationFrame
+- **State Persistence**: Save/load simulation progress
+- **Task Management**: Dynamic task list with completion tracking
+- **Score System**: Real-time scoring with multipliers and bonuses
+- **Time Management**: Shift-based timing with patient arrivals
+
 ## Phase 4: Admin Panel Development (React + Vite)
 
 ### 4.1 Project Setup
@@ -156,6 +251,7 @@ medical-training-backend/
 - Media upload and management
 - Case template system
 - Bulk import/export functionality
+- **Interactive Case Builder**: Visual case creation tool for simulation scenarios
 
 ## Phase 5: Integration & Testing
 
@@ -172,6 +268,7 @@ medical-training-backend/
 - **Frontend**: Component testing with React Testing Library
 - **Integration**: API endpoint testing
 - **Performance**: Load testing for simulation engine
+- **Simulation Testing**: Interactive case scenario testing
 
 ### 5.3 Security Testing
 
@@ -260,19 +357,28 @@ medical-training-backend/
 - Progress tracking
 - Score calculation
 
-### Week 11-12: Admin Panel
+### Week 11-12: Interactive Simulation Engine (NEW)
+
+- Enhanced database schema for interactive cases
+- Top-down clinic layout system
+- Player movement and interaction system
+- Dynamic task progression
+- Mini-game integration
+
+### Week 13-14: Admin Panel
 
 - Vite + React setup
 - Admin authentication
 - Basic CRUD operations
+- Interactive case builder
 
-### Week 13-14: Integration & Testing
+### Week 15-16: Integration & Testing
 
 - API integration
 - End-to-end testing
 - Bug fixes and optimization
 
-### Week 15-16: Deployment & Polish
+### Week 17-18: Deployment & Polish
 
 - Production deployment
 - Performance optimization
@@ -298,6 +404,8 @@ medical-training-backend/
 - **Routing**: React Router
 - **HTTP Client**: Axios
 - **Build Tool**: Create React App
+- **Animation**: Framer Motion
+- **Game Engine**: Custom 2D simulation engine
 
 ### Frontend (Admin)
 
@@ -317,44 +425,50 @@ medical-training-backend/
 ## Success Criteria
 
 1. **Functional Requirements**
-
    - Complete user authentication system
    - Working subscription management
    - Interactive medical case simulations
    - Comprehensive admin panel
    - Email notifications working
+   - **Interactive simulation engine with clinic environment**
+   - **Mini-games for medical procedures**
+   - **Dynamic case progression system**
 
 2. **Non-Functional Requirements**
-
    - Response time < 200ms for API calls
    - 99.9% uptime
    - Mobile-responsive design
    - Accessibility compliance (WCAG 2.1 AA)
    - Security best practices implementation
+   - **Smooth 60fps simulation performance**
+   - **Real-time interactive responsiveness**
 
 3. **Quality Assurance**
    - 90%+ test coverage
    - No critical security vulnerabilities
    - Performance optimization completed
    - Cross-browser compatibility verified
+   - **Simulation engine thoroughly tested**
+   - **Mini-games validated for accuracy**
 
 ## Risk Mitigation
 
 1. **Technical Risks**
-
    - Regular code reviews and pair programming
    - Comprehensive testing strategy
    - Performance monitoring from early stages
+   - **Simulation engine performance profiling**
+   - **Mini-game complexity management**
 
 2. **Timeline Risks**
-
    - Buffer time included in estimates
    - Parallel development where possible
    - Regular progress tracking and adjustments
+   - **Phased simulation feature rollout**
 
 3. **Security Risks**
    - Security review at each phase
    - Regular dependency updates
    - Penetration testing before production
 
-This plan provides a structured approach to building a robust, scalable medical training platform while maintaining code quality and security standards.
+This plan provides a structured approach to building a robust, scalable medical training platform while maintaining code quality and security standards. The new Phase 3.5 specifically addresses the interactive simulation requirements that were missing from the current implementation.

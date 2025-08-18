@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import api from "../utils/api";
 
 interface MedicalCase {
   id: string;
@@ -25,28 +26,57 @@ const CaseLibrary: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("title");
 
-  const difficulties = ["BEGINNER", "INTERMEDIATE", "ADVANCED"];
-  const categories = [
-    "Cardiology",
-    "Endocrinology",
-    "Emergency Medicine",
-    "Pediatrics",
-    "Internal Medicine",
-    "Surgery",
-    "Psychiatry",
-    "Obstetrics & Gynecology",
-  ];
+  const difficulties = useMemo(
+    () => ["BEGINNER", "INTERMEDIATE", "ADVANCED"],
+    []
+  );
+  const categories = useMemo(
+    () => [
+      "Cardiology",
+      "Endocrinology",
+      "Emergency Medicine",
+      "Pediatrics",
+      "Internal Medicine",
+      "Surgery",
+      "Psychiatry",
+      "Obstetrics & Gynecology",
+    ],
+    []
+  );
 
   useEffect(() => {
-    // Simulate loading cases data
+    // Fetch cases from backend API
     const loadCases = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setIsLoading(true);
 
-        // Mock data for demonstration
+        const response = await api.get("/cases");
+        const data = response.data;
+
+        // Transform backend data to match our interface
+        const transformedCases: MedicalCase[] = data.map((caseData: any) => ({
+          id: caseData.id,
+          title: caseData.title,
+          description: caseData.description,
+          difficulty: caseData.difficulty,
+          category: caseData.category,
+          estimatedTime: caseData.estimatedDuration || 30,
+          patientAge: caseData.content?.patient_info?.age || 0,
+          patientGender: caseData.content?.patient_info?.gender || "Unknown",
+          isCompleted: false, // This will be updated based on user progress
+          bestScore: 0, // This will be updated based on user progress
+          tags: caseData.tags || [],
+        }));
+
+        setCases(transformedCases);
+        setFilteredCases(transformedCases);
+        console.log("Loaded cases from backend:", transformedCases);
+      } catch (error) {
+        console.error("Failed to load cases from backend:", error);
+        // Fallback to mock data if backend fails
         const mockCases: MedicalCase[] = [
           {
-            id: "1",
+            id: "fallback-1",
             title: "Hypertension Management - John Smith",
             description:
               "A series of visits for John Smith, focusing on managing his hypertension and observing trends.",
@@ -55,82 +85,27 @@ const CaseLibrary: React.FC = () => {
             estimatedTime: 15,
             patientAge: 45,
             patientGender: "Male",
-            isCompleted: true,
-            bestScore: 92,
+            isCompleted: false,
+            bestScore: 0,
             tags: ["hypertension", "blood pressure", "lifestyle"],
           },
           {
-            id: "2",
-            title: "Diabetes Management - Sarah Johnson",
+            id: "fallback-2",
+            title: "Diabetes Management - Maria Rodriguez",
             description:
-              "Help Sarah Johnson manage her diabetes through proper monitoring and education.",
+              "A diabetes management case with blood glucose monitoring and lifestyle counseling",
             difficulty: "INTERMEDIATE",
             category: "Endocrinology",
-            estimatedTime: 20,
-            patientAge: 38,
-            patientGender: "Female",
-            isCompleted: true,
-            bestScore: 87,
-            tags: ["diabetes", "blood sugar", "insulin"],
-          },
-          {
-            id: "3",
-            title: "Chest Pain Assessment - Michael Brown",
-            description:
-              "Emergency assessment of a patient presenting with chest pain and shortness of breath.",
-            difficulty: "ADVANCED",
-            category: "Emergency Medicine",
             estimatedTime: 25,
-            patientAge: 52,
-            patientGender: "Male",
-            isCompleted: false,
-            tags: ["chest pain", "emergency", "cardiac"],
-          },
-          {
-            id: "4",
-            title: "Pediatric Fever - Emma Wilson",
-            description:
-              "Assessment and management of a 3-year-old child with persistent fever.",
-            difficulty: "INTERMEDIATE",
-            category: "Pediatrics",
-            estimatedTime: 18,
-            patientAge: 3,
+            patientAge: 58,
             patientGender: "Female",
             isCompleted: false,
-            tags: ["pediatric", "fever", "assessment"],
-          },
-          {
-            id: "5",
-            title: "Depression Screening - David Lee",
-            description:
-              "Mental health screening and initial assessment for a patient with depressive symptoms.",
-            difficulty: "INTERMEDIATE",
-            category: "Psychiatry",
-            estimatedTime: 22,
-            patientAge: 29,
-            patientGender: "Male",
-            isCompleted: false,
-            tags: ["mental health", "depression", "screening"],
-          },
-          {
-            id: "6",
-            title: "Prenatal Care - Lisa Garcia",
-            description:
-              "Comprehensive prenatal care visit for a first-time mother at 28 weeks gestation.",
-            difficulty: "BEGINNER",
-            category: "Obstetrics & Gynecology",
-            estimatedTime: 30,
-            patientAge: 26,
-            patientGender: "Female",
-            isCompleted: false,
-            tags: ["prenatal", "pregnancy", "obstetrics"],
+            bestScore: 0,
+            tags: ["diabetes", "blood glucose", "lifestyle"],
           },
         ];
-
         setCases(mockCases);
         setFilteredCases(mockCases);
-      } catch (error) {
-        console.error("Failed to load cases:", error);
       } finally {
         setIsLoading(false);
       }

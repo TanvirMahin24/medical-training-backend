@@ -36,6 +36,7 @@ model User {
   userProgress      UserProgress[]
   userBadges        UserBadge[]
   sessions          Session[]
+  simulationSessions SimulationSession[]
 
   @@map("users")
   @@index([email])
@@ -168,6 +169,7 @@ model MedicalCase {
 
   // Relations
   userProgress      UserProgress[]
+  simulationSessions SimulationSession[]
 
   @@map("medical_cases")
   @@index([difficulty])
@@ -203,6 +205,35 @@ model UserProgress {
   @@index([caseId])
   @@index([score])
   @@index([completedAt])
+  @@index([createdAt])
+}
+
+// Simulation Sessions
+model SimulationSession {
+  id                String   @id @default(uuid())
+  userId            String
+  caseId            String
+  currentVisit      Int      @default(1)
+  currentTask       String?
+  playerPosition    Json     // {x: number, y: number}
+  gameState         Json     // Current simulation state
+  score             Int      @default(0)
+  timeSpent         Int      @default(0) // in seconds
+  completedTasks    String[] // Array of completed task IDs
+  patientState      String   // waiting, following, in-room, etc.
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case              MedicalCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, caseId])
+  @@map("simulation_sessions")
+  @@index([userId])
+  @@index([caseId])
+  @@index([isActive])
   @@index([createdAt])
 }
 

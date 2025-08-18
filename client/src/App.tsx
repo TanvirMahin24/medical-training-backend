@@ -19,6 +19,7 @@ import CaseSimulation from "./pages/CaseSimulation";
 import Progress from "./pages/Progress";
 import Badges from "./pages/Badges";
 import Profile from "./pages/Profile";
+import EndShift from "./pages/EndShift";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -62,6 +63,16 @@ function App() {
                 <PrivateRoute>
                   <Layout>
                     <CaseSimulation />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/end-shift"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <EndShift />
                   </Layout>
                 </PrivateRoute>
               }
