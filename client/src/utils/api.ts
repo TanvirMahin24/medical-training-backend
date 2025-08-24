@@ -35,4 +35,9 @@ api.interceptors.response.use(
   }
 );
 
+// API methods for subscription plans
+export const subscriptionAPI = {
+  getSubscriptionPlans: () => api.get("/payments/plans"),
+};
+
 export default api;

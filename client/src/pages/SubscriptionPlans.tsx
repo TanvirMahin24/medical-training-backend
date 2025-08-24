@@ -1,22 +1,27 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Star, Crown, Zap, ArrowRight } from "lucide-react";
-import {
-  SUBSCRIPTION_PLANS,
-  SubscriptionPlan,
-  getCurrentUserPlan,
-  formatPrice,
-  formatDuration,
-} from "../config/subscriptionPlans";
 import { useAuth } from "../contexts/AuthContext";
 import SubscriptionUpgradeModal from "../components/SubscriptionUpgradeModal";
 import { useSubscriptionUpgrade } from "../hooks/useSubscriptionUpgrade";
+import {
+  useSubscriptionPlans,
+  SubscriptionPlan,
+} from "../hooks/useSubscriptionPlans";
 
 const SubscriptionPlans: React.FC = () => {
   const { user } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const { upgradeSubscription } = useSubscriptionUpgrade();
+  const {
+    plans,
+    loading,
+    error,
+    getCurrentUserPlan,
+    formatPrice,
+    formatDuration,
+  } = useSubscriptionPlans();
 
   const currentPlan = getCurrentUserPlan(user?.subscriptionStatus || "TRIAL");
 
@@ -29,10 +34,38 @@ const SubscriptionPlans: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading subscription plans...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">Error loading plans</div>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const getPlanIcon = (plan: SubscriptionPlan) => {
     if (plan.popular) return <Star className="w-6 h-6 text-yellow-500" />;
     if (plan.recommended) return <Crown className="w-6 h-6 text-purple-500" />;
-    if (plan.id === "enterprise")
+    if (plan.id === "default-enterprise")
       return <Zap className="w-6 h-6 text-blue-500" />;
     return null;
   };
@@ -40,23 +73,23 @@ const SubscriptionPlans: React.FC = () => {
   const getPlanBadge = (plan: SubscriptionPlan) => {
     if (plan.popular) return "Most Popular";
     if (plan.recommended) return "Recommended";
-    if (plan.id === "enterprise") return "Enterprise";
+    if (plan.id === "default-enterprise") return "Enterprise";
     return "";
   };
 
   const getPlanBadgeColor = (plan: SubscriptionPlan) => {
     if (plan.popular) return "bg-yellow-100 text-yellow-800";
     if (plan.recommended) return "bg-purple-100 text-purple-800";
-    if (plan.id === "enterprise") return "bg-blue-100 text-blue-800";
+    if (plan.id === "default-enterprise") return "bg-blue-100 text-blue-800";
     return "";
   };
 
   const isCurrentPlan = (plan: SubscriptionPlan) => {
-    return plan.id === currentPlan.id;
+    return currentPlan ? plan.id === currentPlan.id : false;
   };
 
   const canUpgradeTo = (plan: SubscriptionPlan) => {
-    if (plan.id === "trial") return false;
+    if (plan.id === "default-trial") return false;
     if (isCurrentPlan(plan)) return false;
     return true;
   };
@@ -85,14 +118,16 @@ const SubscriptionPlans: React.FC = () => {
             </div>
             <div className="text-left">
               <p className="text-sm text-gray-600">Current Plan</p>
-              <p className="font-semibold text-gray-900">{currentPlan.name}</p>
+              <p className="font-semibold text-gray-900">
+                {currentPlan?.name || "Loading..."}
+              </p>
             </div>
           </div>
         </motion.div>
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {SUBSCRIPTION_PLANS.map((plan, index) => (
+          {plans.map((plan, index) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 20 }}
@@ -147,15 +182,17 @@ const SubscriptionPlans: React.FC = () => {
               {/* Key Features */}
               <div className="px-6 md:px-8 pb-6 md:pb-8 flex-1">
                 <div className="space-y-3 mb-8">
-                  {plan.keyFeatures.map((feature, featureIndex) => (
-                    <div
-                      key={featureIndex}
-                      className="flex items-center space-x-3"
-                    >
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-sm text-gray-700">{feature}</span>
-                    </div>
-                  ))}
+                  {plan.keyFeatures.map(
+                    (feature: string, featureIndex: number) => (
+                      <div
+                        key={featureIndex}
+                        className="flex items-center space-x-3"
+                      >
+                        <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                        <span className="text-sm text-gray-700">{feature}</span>
+                      </div>
+                    )
+                  )}
                 </div>
 
                 {/* Action Button */}

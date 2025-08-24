@@ -7,6 +7,8 @@ import { AdminGuard } from './guards/admin.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { SubscriptionPlanModule } from './subscription-plan.module';
+import { StripePlanService } from './stripe-plan.service';
+import { StripePlanController } from './controllers/stripe-plan.controller';
 
 @Module({
   imports: [
@@ -24,8 +26,8 @@ import { SubscriptionPlanModule } from './subscription-plan.module';
     AuthModule,
     SubscriptionPlanModule,
   ],
-  controllers: [AdminController],
-  providers: [AdminService, AdminGuard],
-  exports: [AdminService, AdminGuard],
+  controllers: [AdminController, StripePlanController],
+  providers: [AdminService, AdminGuard, StripePlanService],
+  exports: [AdminService, AdminGuard, StripePlanService],
 })
 export class AdminModule {}

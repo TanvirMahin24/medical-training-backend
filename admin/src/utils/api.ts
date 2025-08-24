@@ -120,6 +120,15 @@ export const adminAPI = {
   getPerformanceHistory: (hours?: number) =>
     api.get("/monitoring/history", { params: { hours } }),
   getMonitoringDashboard: () => api.get("/monitoring/dashboard"),
+
+  // Stripe Plan Management
+  getStripePlanStatus: (planId: string) =>
+    api.get(`/admin/stripe-plans/status/${planId}`),
+  syncPlanToStripe: (planId: string) =>
+    api.post("/admin/stripe-plans/sync", { planId }),
+  deactivateStripePlan: (planId: string) =>
+    api.post("/admin/stripe-plans/deactivate", { planId }),
+  syncAllPlansToStripe: () => api.post("/admin/stripe-plans/sync-all"),
 };
 
 export default api;

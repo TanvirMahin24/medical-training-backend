@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import {
@@ -26,6 +28,8 @@ import { CancelSubscriptionDto } from './dto/cancel-subscription.dto';
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentsController {
+  private readonly logger = new Logger(PaymentsController.name);
+
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Get('plans')
@@ -54,7 +58,7 @@ export class PaymentsController {
   ) {
     return this.paymentsService.createSubscription(
       req.user.id,
-      createSubscriptionDto.priceId,
+      createSubscriptionDto.planId,
       createSubscriptionDto.paymentMethodId,
     );
   }
@@ -115,13 +119,18 @@ export class PaymentsController {
     if (!webhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
     }
-    
-    const event = this.paymentsService['stripe'].webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret,
-    );
 
-    return this.paymentsService.handleWebhook(event);
+    try {
+      const event = this.paymentsService['stripe'].webhooks.constructEvent(
+        body,
+        signature,
+        webhookSecret,
+      );
+
+      return this.paymentsService.handleWebhook(event);
+    } catch (err) {
+      this.logger.error('Webhook signature verification failed:', err);
+      throw new BadRequestException('Invalid webhook signature');
+    }
   }
 }

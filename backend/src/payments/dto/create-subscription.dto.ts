@@ -3,11 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSubscriptionDto {
   @ApiProperty({
-    description: 'Stripe price ID for the subscription plan',
-    example: 'price_1234567890',
+    description: 'ID of the subscription plan from the database',
+    example: 'uuid-of-subscription-plan',
   })
   @IsString()
-  priceId: string;
+  planId: string;
 
   @ApiProperty({
     description: 'Stripe payment method ID (optional)',

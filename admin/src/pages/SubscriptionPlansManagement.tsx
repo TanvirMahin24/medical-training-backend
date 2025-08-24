@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  ToggleLeft,
+  ToggleRight,
+  CreditCard,
+} from "lucide-react";
 import { adminAPI } from "../utils/api";
+import StripePlanManager from "../components/StripePlanManager";
 
 interface SubscriptionPlan {
   id: string;
@@ -56,6 +65,7 @@ const SubscriptionPlansManagement: React.FC = () => {
     null
   );
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"plans" | "stripe">("plans");
   const [formData, setFormData] = useState<PlanForm>({
     name: "",
     tagline: "",
@@ -282,139 +292,180 @@ const SubscriptionPlansManagement: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Plans Grid */}
+      {/* Tabs */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="border-b border-gray-200"
       >
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
-              plan.isActive ? "border-green-500" : "border-red-500"
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("plans")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "plans"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            {/* Plan Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {plan.name}
-                </h3>
-                <p className="text-sm text-gray-600">{plan.tagline}</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                {plan.popular && (
-                  <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                    Popular
-                  </span>
-                )}
-                {plan.recommended && (
-                  <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                    Recommended
-                  </span>
-                )}
-              </div>
-            </div>
+            Subscription Plans
+          </button>
+          <button
+            onClick={() => setActiveTab("stripe")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+              activeTab === "stripe"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Stripe Integration</span>
+          </button>
+        </nav>
+      </motion.div>
 
-            {/* Price */}
-            <div className="mb-4">
-              <div className="text-2xl font-bold text-gray-900">
-                ${plan.price}
-              </div>
-              <div className="text-sm text-gray-500">
-                per {formatDuration(plan.duration)}
-              </div>
-            </div>
-
-            {/* Key Features */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
-                Key Features
-              </h4>
-              <ul className="space-y-1">
-                {plan.keyFeatures.map((feature, index) => (
-                  <li
-                    key={index}
-                    className="text-sm text-gray-600 flex items-center"
-                  >
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Limits Summary */}
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Limits</h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Cases:</span>
-                  <span className="font-medium">
-                    {plan.limits.casesPerMonth === -1
-                      ? "∞"
-                      : plan.limits.casesPerMonth}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Simulations:</span>
-                  <span className="font-medium">
-                    {plan.limits.simulationsPerMonth === -1
-                      ? "∞"
-                      : plan.limits.simulationsPerMonth}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleToggleStatus(plan)}
-                  className={`p-2 rounded-md transition-colors ${
-                    plan.isActive
-                      ? "text-green-600 hover:text-green-800"
-                      : "text-red-600 hover:text-red-800"
-                  }`}
-                  title={plan.isActive ? "Deactivate" : "Activate"}
-                >
-                  {plan.isActive ? (
-                    <ToggleRight className="w-4 h-4" />
-                  ) : (
-                    <ToggleLeft className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  onClick={() => openEditModal(plan)}
-                  className="text-blue-600 hover:text-blue-800 p-2 rounded-md transition-colors"
-                  title="Edit Plan"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => openDeleteModal(plan)}
-                  className="text-red-600 hover:text-red-800 p-2 rounded-md transition-colors"
-                  title="Delete Plan"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <span
-                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                  plan.isActive
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
+      {/* Tab Content */}
+      {activeTab === "plans" && (
+        <>
+          {/* Plans Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
+                  plan.isActive ? "border-green-500" : "border-red-500"
                 }`}
               >
-                {plan.isActive ? "Active" : "Inactive"}
-              </span>
-            </div>
-          </div>
-        ))}
-      </motion.div>
+                {/* Plan Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {plan.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">{plan.tagline}</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {plan.popular && (
+                      <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                        Popular
+                      </span>
+                    )}
+                    {plan.recommended && (
+                      <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                        Recommended
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div className="mb-4">
+                  <div className="text-2xl font-bold text-gray-900">
+                    ${plan.price}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    per {formatDuration(plan.duration)}
+                  </div>
+                </div>
+
+                {/* Key Features */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Key Features
+                  </h4>
+                  <ul className="space-y-1">
+                    {plan.keyFeatures.map((feature, index) => (
+                      <li
+                        key={index}
+                        className="text-sm text-gray-600 flex items-center"
+                      >
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Limits Summary */}
+                <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Limits
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cases:</span>
+                      <span className="font-medium">
+                        {plan.limits.casesPerMonth === -1
+                          ? "∞"
+                          : plan.limits.casesPerMonth}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Simulations:</span>
+                      <span className="font-medium">
+                        {plan.limits.simulationsPerMonth === -1
+                          ? "∞"
+                          : plan.limits.simulationsPerMonth}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleStatus(plan)}
+                      className={`p-2 rounded-md transition-colors ${
+                        plan.isActive
+                          ? "text-green-600 hover:text-green-800"
+                          : "text-red-600 hover:text-red-800"
+                      }`}
+                      title={plan.isActive ? "Deactivate" : "Activate"}
+                    >
+                      {plan.isActive ? (
+                        <ToggleRight className="w-4 h-4" />
+                      ) : (
+                        <ToggleLeft className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => openEditModal(plan)}
+                      className="text-blue-600 hover:text-blue-800 p-2 rounded-md transition-colors"
+                      title="Edit Plan"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(plan)}
+                      className="text-red-600 hover:text-red-800 p-2 rounded-md transition-colors"
+                      title="Delete Plan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      plan.isActive
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {plan.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </>
+      )}
+
+      {activeTab === "stripe" && <StripePlanManager onRefresh={loadPlans} />}
 
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (

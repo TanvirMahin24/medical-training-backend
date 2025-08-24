@@ -62,7 +62,7 @@ export class PaymentsService {
 
   async createSubscription(
     userId: string,
-    priceId: string,
+    planId: string,
     paymentMethodId?: string,
   ) {
     try {
@@ -75,9 +75,33 @@ export class PaymentsService {
         throw new NotFoundException('User not found');
       }
 
+      // Get the subscription plan
+      const subscriptionPlan = await this.prisma.subscriptionPlan.findUnique({
+        where: { id: planId, isActive: true },
+      });
+
+      if (!subscriptionPlan) {
+        this.logger.error(`Subscription plan not found for ID: ${planId}`);
+        throw new BadRequestException('Subscription plan not found');
+      }
+
+      this.logger.log(
+        `Found subscription plan: ${subscriptionPlan.name}, Stripe Price ID: ${subscriptionPlan.stripePriceId}, Stripe Active: ${subscriptionPlan.stripeActive}`,
+      );
+
+      if (!subscriptionPlan.stripePriceId || !subscriptionPlan.stripeActive) {
+        this.logger.error(
+          `Subscription plan ${subscriptionPlan.name} is not properly configured for Stripe. Price ID: ${subscriptionPlan.stripePriceId}, Active: ${subscriptionPlan.stripeActive}`,
+        );
+        throw new BadRequestException(
+          'Subscription plan is not configured for Stripe payments. Please contact support.',
+        );
+      }
+
       // Create or get Stripe customer
       let customerId = user.stripeCustomerId;
       if (!customerId) {
+        this.logger.log(`Creating new Stripe customer for user ${userId}`);
         const customer = await this.createCustomer(
           userId,
           user.email,
@@ -85,34 +109,36 @@ export class PaymentsService {
           user.lastName || undefined,
         );
         customerId = customer.id;
+        this.logger.log(`Created Stripe customer: ${customerId}`);
+      } else {
+        this.logger.log(`Using existing Stripe customer: ${customerId}`);
       }
 
-      // Create subscription
+      // Create subscription using the plan's Stripe price ID
       const subscriptionData: Stripe.SubscriptionCreateParams = {
         customer: customerId,
-        items: [{ price: priceId }],
+        items: [{ price: subscriptionPlan.stripePriceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent'],
         trial_period_days: 14,
+        // Disable automatic tax for now since customer address is required
+        // automatic_tax: { enabled: true },
       };
 
       if (paymentMethodId) {
         subscriptionData.default_payment_method = paymentMethodId;
       }
 
-      const subscription =
-        await this.stripe.subscriptions.create(subscriptionData);
-
-      // Get the subscription plan based on plan type
-      const planType = this.getPlanTypeFromPriceId(priceId);
-      const subscriptionPlan = await this.prisma.subscriptionPlan.findFirst({
-        where: { name: planType, isActive: true },
+      this.logger.log(`Creating Stripe subscription with data:`, {
+        customerId,
+        priceId: subscriptionPlan.stripePriceId,
+        planName: subscriptionPlan.name,
+        paymentMethodId: paymentMethodId || 'none',
       });
 
-      if (!subscriptionPlan) {
-        throw new BadRequestException('Subscription plan not found');
-      }
+      const subscription =
+        await this.stripe.subscriptions.create(subscriptionData);
 
       // Save subscription to database
       const dbSubscription = await this.prisma.subscription.create({
@@ -120,7 +146,7 @@ export class PaymentsService {
           userId,
           subscriptionPlanId: subscriptionPlan.id,
           stripeSubscriptionId: subscription.id,
-          planType: planType,
+          planType: subscriptionPlan.name.toLowerCase(),
           status: this.mapStripeStatus(subscription.status),
           currentPeriodStart: new Date(
             subscription.current_period_start * 1000,
@@ -150,6 +176,20 @@ export class PaymentsService {
         `Failed to create subscription for user ${userId}:`,
         error,
       );
+
+      // Provide more specific error messages
+      if (error.message?.includes("customer's location isn't recognized")) {
+        throw new BadRequestException(
+          'Customer address required for tax calculation. Please update your profile with a valid address.',
+        );
+      }
+
+      if (error.message?.includes('Subscription plan not found')) {
+        throw new BadRequestException(
+          'Selected subscription plan is not available',
+        );
+      }
+
       throw new BadRequestException('Failed to create subscription');
     }
   }
@@ -227,6 +267,9 @@ export class PaymentsService {
         metadata: {
           userId,
         },
+        automatic_payment_methods: {
+          enabled: true,
+        },
       });
 
       // Save payment intent to database
@@ -243,7 +286,15 @@ export class PaymentsService {
       this.logger.log(
         `Payment intent created for user ${userId}: ${paymentIntent.id}`,
       );
-      return paymentIntent;
+
+      // Return client secret for frontend confirmation
+      return {
+        id: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret,
+        amount,
+        currency,
+        status: paymentIntent.status,
+      };
     } catch (error) {
       this.logger.error(
         `Failed to create payment intent for user ${userId}:`,
@@ -408,18 +459,32 @@ export class PaymentsService {
 
   async getSubscriptionPlans() {
     try {
-      const prices = await this.stripe.prices.list({
-        active: true,
-        expand: ['data.product'],
+      // Get subscription plans from database instead of Stripe
+      const plans = await this.prisma.subscriptionPlan.findMany({
+        where: { isActive: true },
+        orderBy: { price: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          tagline: true,
+          price: true,
+          currency: true,
+          duration: true,
+          keyFeatures: true,
+          casesPerMonth: true,
+          simulationsPerMonth: true,
+          practiceTests: true,
+          certificates: true,
+          prioritySupport: true,
+          offlineAccess: true,
+          customCases: true,
+          popular: true,
+          recommended: true,
+          stripeActive: true,
+        },
       });
 
-      return prices.data.map((price) => ({
-        id: price.id,
-        product: price.product as Stripe.Product,
-        unit_amount: price.unit_amount,
-        currency: price.currency,
-        recurring: price.recurring,
-      }));
+      return plans;
     } catch (error) {
       this.logger.error('Failed to fetch subscription plans:', error);
       throw new BadRequestException('Failed to fetch subscription plans');

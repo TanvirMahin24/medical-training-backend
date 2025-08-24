@@ -94,6 +94,12 @@ model SubscriptionPlan {
   popular           Boolean  @default(false)
   recommended       Boolean  @default(false)
   isActive          Boolean  @default(true)
+  
+  // Stripe Integration
+  stripeProductId   String?  @unique
+  stripePriceId     String?  @unique
+  stripeActive      Boolean  @default(false)
+  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

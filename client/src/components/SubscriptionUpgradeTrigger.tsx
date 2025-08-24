@@ -4,10 +4,7 @@ import { Crown, Lock, AlertTriangle } from "lucide-react";
 import SubscriptionUpgradeModal from "./SubscriptionUpgradeModal";
 import { useSubscriptionUpgrade } from "../hooks/useSubscriptionUpgrade";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  getCurrentUserPlan,
-  SUBSCRIPTION_PLANS,
-} from "../config/subscriptionPlans";
+import { useSubscriptionPlans } from "../hooks/useSubscriptionPlans";
 
 interface SubscriptionUpgradeTriggerProps {
   triggerType?: "limit-reached" | "feature-locked" | "premium-feature";
@@ -25,11 +22,12 @@ const SubscriptionUpgradeTrigger: React.FC<SubscriptionUpgradeTriggerProps> = ({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { user } = useAuth();
   const { upgradeSubscription } = useSubscriptionUpgrade();
+  const { plans, getCurrentUserPlan } = useSubscriptionPlans();
 
   const currentPlan = getCurrentUserPlan(user?.subscriptionStatus || "TRIAL");
-  const hasUpgradeOptions = SUBSCRIPTION_PLANS.some(
-    (plan) => plan.id !== currentPlan.id && plan.price > 0
-  );
+  const hasUpgradeOptions = currentPlan
+    ? plans.some((plan) => plan.id !== currentPlan.id && plan.price > 0)
+    : plans.some((plan) => plan.price > 0);
 
   const getTriggerContent = () => {
     switch (triggerType) {
